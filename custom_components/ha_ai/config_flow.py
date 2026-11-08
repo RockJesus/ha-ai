@@ -8,6 +8,7 @@ free-text form instead of blocking setup.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import voluptuous as vol
@@ -51,6 +52,11 @@ from .models import (
     async_fetch_catalog,
 )
 
+_LOGGER = logging.getLogger(__name__)
+
+# Sentinel used inside dropdowns; empty strings are not valid select options.
+USE_DEFAULT = "__ha_ai_default__"
+
 
 # ---------------------------------------------------------------------------
 # Selectors
@@ -86,7 +92,7 @@ def _model_selector(
     options: list[ModelOption], default_label: str, current: str | None
 ) -> selector.SelectSelector:
     """Build a dropdown whose first entry means 'use the provider default'."""
-    entries = [selector.SelectOptionDict(value="", label=default_label)]
+    entries = [selector.SelectOptionDict(value=USE_DEFAULT, label=default_label)]
     known = {option.id for option in options}
     if current and current not in known:
         entries.append(
@@ -143,7 +149,8 @@ def _catalog_schema(
     """Model pickers rendered as dropdowns plus the entry level settings."""
     schema: dict[Any, Any] = {
         vol.Optional(
-            CONF_CHAT_MODEL, default=(current.get(CONF_CHAT_MODEL) or "").strip()
+            CONF_CHAT_MODEL,
+            default=((current.get(CONF_CHAT_MODEL) or "").strip() or USE_DEFAULT),
         ): _model_selector(
             catalog.by_kind(KIND_CHAT),
             _default_label(provider, "chat_model", "不使用聊天模型（仅生图）"),
@@ -153,21 +160,24 @@ def _catalog_schema(
             CONF_IMAGE_MODEL,
             default=(
                 current.get(CONF_IMAGE_MODEL) or current.get(CONF_LEGACY_MODEL) or ""
-            ).strip(),
+            ).strip()
+            or USE_DEFAULT,
         ): _model_selector(
             catalog.by_kind(KIND_IMAGE),
             _default_label(provider, "image_model", "不使用图像模型"),
             current.get(CONF_IMAGE_MODEL) or current.get(CONF_LEGACY_MODEL),
         ),
         vol.Optional(
-            CONF_STT_MODEL, default=(current.get(CONF_STT_MODEL) or "").strip()
+            CONF_STT_MODEL,
+            default=((current.get(CONF_STT_MODEL) or "").strip() or USE_DEFAULT),
         ): _model_selector(
             catalog.by_kind(KIND_STT),
             _default_label(provider, "stt_model", "不使用语音转文字"),
             current.get(CONF_STT_MODEL),
         ),
         vol.Optional(
-            CONF_TTS_MODEL, default=(current.get(CONF_TTS_MODEL) or "").strip()
+            CONF_TTS_MODEL,
+            default=((current.get(CONF_TTS_MODEL) or "").strip() or USE_DEFAULT),
         ): _model_selector(
             catalog.by_kind(KIND_TTS),
             _default_label(provider, "tts_model", "不使用文字转语音"),
@@ -178,7 +188,6 @@ def _catalog_schema(
         ): selector.TextSelector(
             selector.TextSelectorConfig(
                 type=selector.TextSelectorType.TEXT,
-                placeholder="例如 FunAudioLLM/CosyVoice2-0.5B:alex",
             )
         ),
         vol.Optional(
@@ -207,19 +216,23 @@ def _manual_schema(current: dict[str, Any], *, include_options: bool) -> vol.Sch
     """Free-text fallback used when the provider has no model catalogue."""
     schema: dict[Any, Any] = {
         vol.Optional(
-            CONF_CHAT_MODEL, default=(current.get(CONF_CHAT_MODEL) or "").strip()
+            CONF_CHAT_MODEL,
+            default=((current.get(CONF_CHAT_MODEL) or "").strip() or USE_DEFAULT),
         ): selector.TextSelector(),
         vol.Optional(
             CONF_IMAGE_MODEL,
             default=(
                 current.get(CONF_IMAGE_MODEL) or current.get(CONF_LEGACY_MODEL) or ""
-            ).strip(),
+            ).strip()
+            or USE_DEFAULT,
         ): selector.TextSelector(),
         vol.Optional(
-            CONF_STT_MODEL, default=(current.get(CONF_STT_MODEL) or "").strip()
+            CONF_STT_MODEL,
+            default=((current.get(CONF_STT_MODEL) or "").strip() or USE_DEFAULT),
         ): selector.TextSelector(),
         vol.Optional(
-            CONF_TTS_MODEL, default=(current.get(CONF_TTS_MODEL) or "").strip()
+            CONF_TTS_MODEL,
+            default=((current.get(CONF_TTS_MODEL) or "").strip() or USE_DEFAULT),
         ): selector.TextSelector(),
         vol.Optional(
             CONF_TTS_VOICE, default=(current.get(CONF_TTS_VOICE) or "").strip()
@@ -266,7 +279,8 @@ def _clean_models(user_input: dict[str, Any]) -> dict[str, Any]:
     """Strip whitespace from every model field and the connection settings."""
     data = dict(user_input)
     for key in _MODEL_KEYS:
-        data[key] = (data.get(key) or "").strip()
+        value = (data.get(key) or "").strip()
+        data[key] = "" if value == USE_DEFAULT else value
     data[CONF_SIZE] = (data.get(CONF_SIZE) or DEFAULT_SIZE).strip()
     if CONF_API_KEY in data:
         data[CONF_API_KEY] = (data.get(CONF_API_KEY) or "").strip()
@@ -358,15 +372,21 @@ class HAAIConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             return self._async_finish(user_input)
 
-        return self.async_show_form(
-            step_id="models",
-            data_schema=_catalog_schema(
+        try:
+            schema = _catalog_schema(
                 self.hass,
                 provider,
                 self._catalog,
                 self._credentials,
                 include_options=False,
-            ),
+            )
+        except Exception:  # noqa: BLE001 - never block setup on a UI bug
+            _LOGGER.exception("Could not render the model dropdowns")
+            return await self.async_step_manual()
+
+        return self.async_show_form(
+            step_id="models",
+            data_schema=schema,
             description_placeholders={"count": str(len(self._catalog.options))},
         )
 
@@ -495,15 +515,21 @@ class HAAIOptionsFlow(OptionsFlow):
                 data={**self._settings, **_clean_models(user_input)}
             )
 
-        return self.async_show_form(
-            step_id="models",
-            data_schema=_catalog_schema(
+        try:
+            schema = _catalog_schema(
                 self.hass,
                 provider,
                 self._catalog,
                 self._settings,
                 include_options=False,
-            ),
+            )
+        except Exception:  # noqa: BLE001 - never block saving on a UI bug
+            _LOGGER.exception("Could not render the model dropdowns")
+            return await self.async_step_manual()
+
+        return self.async_show_form(
+            step_id="models",
+            data_schema=schema,
             description_placeholders={"count": str(len(self._catalog.options))},
         )
 

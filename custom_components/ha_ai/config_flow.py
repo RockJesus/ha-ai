@@ -39,6 +39,7 @@ from .const import (
     DEFAULT_SIZE,
     DEFAULTS,
     DOMAIN,
+    KEYLESS_PROVIDERS,
     PROVIDER_LABELS,
     PROVIDER_POLLINATIONS,
     PROVIDERS,
@@ -336,7 +337,7 @@ class HAAIConfigFlow(ConfigFlow, domain=DOMAIN):
             api_key = (user_input.get(CONF_API_KEY) or "").strip()
             base_url = normalize_base_url(user_input.get(CONF_BASE_URL))
 
-            if provider != PROVIDER_POLLINATIONS and not api_key:
+            if provider not in KEYLESS_PROVIDERS and not api_key:
                 errors["base"] = "api_key_required"
             else:
                 catalog = await async_fetch_catalog(
@@ -439,7 +440,7 @@ class HAAIConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_API_KEY: api_key,
                 CONF_BASE_URL: base_url,
             }
-            if provider != PROVIDER_POLLINATIONS and not api_key:
+            if provider not in KEYLESS_PROVIDERS and not api_key:
                 errors["base"] = "api_key_required"
             else:
                 catalog = await async_fetch_catalog(

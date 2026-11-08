@@ -56,6 +56,20 @@
 
 ## 更新日志
 
+### v1.1.6
+- 服务商从 4 个扩到 24 个，覆盖国内与海外主流 OpenAI 兼容接口，模型列表全部走 `/models` 下拉：
+
+| 分组 | 服务商 | 默认 Base URL |
+|---|---|---|
+| 国内 | 硅基流动、火山方舟、阿里云百炼、智谱 GLM、月之暗面 Kimi、阶跃星辰、MiniMax、腾讯混元、讯飞星火、百川、Pollinations | 各自官方兼容地址 |
+| 海外 | OpenAI、OpenRouter、Google Gemini（OpenAI 兼容）、Groq、Mistral、Together AI、DeepSeek、xAI、Fireworks、Cerebras | 各自官方兼容地址 |
+| 本地 | Ollama、LM Studio | `http://localhost:11434/v1`、`http://localhost:1234/v1` |
+| 自定义 | 任意 OpenAI 兼容接口 | 手填 |
+
+- Ollama / LM Studio / Pollinations 选为「无需 Key」，其余服务商仍要求 Key 并用 `/models` 当场校验，Key 错会直接提示「认证失败」。
+- OpenAI 条目默认带上 `whisper-1` 转写与 `gpt-4o-mini-tts` 合成，Groq 默认 `whisper-large-v3`。
+- 说明：Anthropic Claude 使用私有协议、Perplexity 没有 `/models`，两者都不能按 OpenAI 兼容方式直接接入，故未列入；Azure OpenAI 需要按部署名调用，请用「自定义」并填自己的 endpoint。
+
 ### v1.1.5
 - 修复对话代理实体在初始化阶段就调用 LLM API 列表、此时 `self.hass` 还是空导致整个 conversation 平台启动失败（实体显示「已恢复 / 不可用」）的问题：改为实体加入后再过滤 LLM API。
 

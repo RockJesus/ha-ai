@@ -33,6 +33,14 @@ from .const import (
 )
 
 
+def _absolute_url(value: str | None) -> str:
+    """Prefix a bare host with https:// so the stored base URL is absolute."""
+    value = (value or "").strip().rstrip("/")
+    if value and not value.startswith(("http://", "https://")):
+        value = f"https://{value}"
+    return value
+
+
 def _provider_selector() -> selector.SelectSelector:
     return selector.SelectSelector(
         selector.SelectSelectorConfig(
@@ -113,6 +121,7 @@ class HAAIConfigFlow(ConfigFlow, domain=DOMAIN):
 
             if not base_url:
                 base_url = DEFAULTS[provider]["base_url"]
+            base_url = _absolute_url(base_url)
             if not chat_model:
                 chat_model = DEFAULTS[provider]["chat_model"]
             if not image_model:
@@ -166,9 +175,9 @@ class HAAIOptionsFlow(OptionsFlow):
             else:
                 user_input[CONF_CHAT_MODEL] = chat_model
                 user_input[CONF_IMAGE_MODEL] = image_model
-                user_input[CONF_BASE_URL] = (
-                    user_input.get(CONF_BASE_URL) or ""
-                ).strip()
+                user_input[CONF_BASE_URL] = _absolute_url(
+                    user_input.get(CONF_BASE_URL)
+                )
                 return self.async_create_entry(data=user_input)
 
         return self.async_show_form(

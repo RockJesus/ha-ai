@@ -83,6 +83,19 @@ async def async_setup_entry(
     async_add_entities([HAAIEntity(entry)])
 
 
+def _normalize_base_url(base_url: str | None) -> str:
+    """Return an absolute base URL without a trailing slash.
+
+    Users often type a bare host such as 'api.siliconflow.cn/v1'. aiohttp then
+    treats it as a relative URL and raises InvalidUrlClientError, so the scheme
+    has to be added before any request is made.
+    """
+    base_url = (base_url or "").strip().rstrip("/")
+    if base_url and not base_url.startswith(("http://", "https://")):
+        base_url = f"https://{base_url}"
+    return base_url
+
+
 def _parse_size(size: str) -> tuple[int, int]:
     """Parse '1024x1024' into width and height."""
     try:
@@ -112,7 +125,7 @@ class HAAIEntity(AITaskEntity):
             data.get(CONF_IMAGE_MODEL) or data.get(CONF_LEGACY_MODEL) or ""
         )
         base_url = data.get(CONF_BASE_URL) or DEFAULTS[self._provider]["base_url"]
-        self._base_url: str = base_url.rstrip("/")
+        self._base_url: str = _normalize_base_url(base_url)
         self._size: str = data.get(CONF_SIZE, DEFAULT_SIZE)
         self._width, self._height = _parse_size(self._size)
 

@@ -37,3 +37,8 @@
 - 图像结果交给 HA 的 `image` 媒体目录保存。
 - 请求超时 180 秒；图像尺寸以 Pillow 读到的真实像素回填。
 - 若某些 OpenAI 兼容服务不接受 `response_format`，会自动去掉该参数重试一次。
+
+## 更新日志
+
+### v1.0.1
+- 修复 Base URL 未带协议（例如直接填 `api.siliconflow.cn/v1`）时所有请求都抛 `InvalidUrlClientError`、图像生成 0.2 秒即失败的问题：现在保存与运行时都会自动补 `https://`。

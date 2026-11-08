@@ -28,6 +28,7 @@ from .const import (
     CONF_CHAT_MODEL,
     CONF_IMAGE_MODEL,
     CONF_PROMPT,
+    DEFAULT_MAX_TOKENS,
     DEFAULT_TIMEOUT,
     DOMAIN,
     normalize_base_url,
@@ -163,6 +164,7 @@ class HAAIConversationEntity(conversation.ConversationEntity):
             "model": self._chat_model,
             "messages": _convert_content(chat_log.content),
             "stream": False,
+            "max_tokens": DEFAULT_MAX_TOKENS,
         }
 
         if chat_log.llm_api and chat_log.llm_api.tools:

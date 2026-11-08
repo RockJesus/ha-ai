@@ -22,6 +22,10 @@ CONF_TTS_VOICE = "tts_voice"
 # Voice requests synthesize / transcribe short utterances, 120s is generous.
 DEFAULT_TIMEOUT = 120
 
+# Chat completions: keep the reservation small so per-request credit checks on
+# gateways like OpenRouter do not reject the call.
+DEFAULT_MAX_TOKENS = 2048
+
 # Legacy key used before the integration supported chat models.
 CONF_LEGACY_MODEL = "model"
 

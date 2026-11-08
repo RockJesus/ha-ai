@@ -56,6 +56,10 @@
 
 ## 更新日志
 
+### v1.0.6
+- 每个配置条目现在会先创建一台设备（`HA AI · <模型名>`，型号为服务商名），`ai_task` / `conversation` / `stt` / `tts` 四类实体统一挂在该设备下，设备页可直接看到能力归属。
+- 实体改用设备+实体两级命名（如 `HA AI · deepseek/deepseek-v4.1-flash` 下的「对话代理」），unique_id 与 entity_id 保持不变。
+
 ### v1.0.5
 - 对话代理请求补上 `max_tokens`（2048）：OpenRouter 这类网关会按未声明的上限（131072）预扣额度，余额不多时直接返回 `402 requires more credits`。
 

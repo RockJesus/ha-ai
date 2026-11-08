@@ -31,6 +31,7 @@ from .const import (
     DEFAULT_MAX_TOKENS,
     DEFAULT_TIMEOUT,
     DOMAIN,
+    device_info,
     normalize_base_url,
     resolve_config,
 )
@@ -61,7 +62,7 @@ async def async_setup_entry(
 class HAAIConversationEntity(conversation.ConversationEntity):
     """HA AI conversation agent."""
 
-    _attr_has_entity_name = False
+    _attr_has_entity_name = True
 
     def __init__(self, entry: ConfigEntry, config: dict[str, Any]) -> None:
         """Initialize the agent."""
@@ -74,8 +75,9 @@ class HAAIConversationEntity(conversation.ConversationEntity):
         )
         self._prompt: str | None = config.get(CONF_PROMPT) or None
 
-        self._attr_name = f"HA AI: {self._chat_model}"
+        self._attr_name = "对话代理"
         self._attr_unique_id = f"{entry.entry_id}_conversation"
+        self._attr_device_info = device_info(entry, config)
 
         if self._llm_hass_api:
             self._attr_supported_features = (

@@ -22,6 +22,7 @@ from .const import (
     CONF_PROMPT,
     CONF_STT_MODEL,
     DEFAULT_TIMEOUT,
+    device_info,
     normalize_base_url,
     resolve_config,
 )
@@ -50,7 +51,7 @@ async def async_setup_entry(
 class HAAISpeechToTextEntity(stt.SpeechToTextEntity):
     """Speech-to-text entity backed by an OpenAI-compatible endpoint."""
 
-    _attr_has_entity_name = False
+    _attr_has_entity_name = True
 
     def __init__(
         self, entry: ConfigEntry, config: dict[str, Any], model: str
@@ -61,8 +62,9 @@ class HAAISpeechToTextEntity(stt.SpeechToTextEntity):
         self._prompt = config.get(CONF_PROMPT) or ""
         self._model = model
 
-        self._attr_name = f"HA AI 语音转文字 ({model})"
+        self._attr_name = "语音转文字"
         self._attr_unique_id = f"{entry.entry_id}_stt"
+        self._attr_device_info = device_info(entry, config)
 
     @property
     def supported_languages(self) -> list[str]:

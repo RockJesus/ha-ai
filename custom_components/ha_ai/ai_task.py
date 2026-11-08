@@ -52,6 +52,7 @@ from .const import (
     PROVIDER_POLLINATIONS,
     PROVIDER_SILICONFLOW,
     PROVIDER_VOLCENGINE,
+    device_info,
 )
 
 PARALLEL_UPDATES = 1
@@ -111,7 +112,7 @@ def _parse_size(size: str) -> tuple[int, int]:
 class HAAIEntity(AITaskEntity):
     """An AI Task entity backed by a remote HTTP API."""
 
-    _attr_has_entity_name = False
+    _attr_has_entity_name = True
 
     def __init__(self, entry: ConfigEntry) -> None:
         """Initialize the entity."""
@@ -148,7 +149,8 @@ class HAAIEntity(AITaskEntity):
             )
         self._attr_supported_features = features
         self._attr_unique_id = f"{entry.entry_id}_image"
-        self._attr_name = f"AI Task {self._image_model or self._chat_model}"
+        self._attr_name = "AI 任务"
+        self._attr_device_info = device_info(entry)
 
     # ------------------------------------------------------------------
     # Data generation

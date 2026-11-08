@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 
 DOMAIN = "ha_ai"
 
@@ -110,3 +111,21 @@ def resolve_config(entry: ConfigEntry) -> dict[str, Any]:
         if not (config.get(key) or "").strip():
             config[key] = defaults.get(key, "")
     return config
+
+
+MANUFACTURER = "RockJesus"
+DOCUMENTATION_URL = "https://github.com/RockJesus/ha-ai"
+
+
+def device_info(entry: ConfigEntry, config: dict[str, Any] | None = None) -> DeviceInfo:
+    """Return the device that owns this entry's entities."""
+    config = config if config is not None else resolve_config(entry)
+    provider = config.get(CONF_PROVIDER, "")
+    return DeviceInfo(
+        identifiers={(DOMAIN, entry.entry_id)},
+        name=f"HA AI · {entry.title}",
+        manufacturer=MANUFACTURER,
+        model=PROVIDER_LABELS.get(provider, provider) or None,
+        entry_type=DeviceEntryType.SERVICE,
+        configuration_url=DOCUMENTATION_URL,
+    )

@@ -21,6 +21,7 @@ from .const import (
     CONF_TTS_MODEL,
     CONF_TTS_VOICE,
     DEFAULT_TIMEOUT,
+    device_info,
     normalize_base_url,
     resolve_config,
 )
@@ -49,7 +50,7 @@ async def async_setup_entry(
 class HAAITextToSpeechEntity(tts.TextToSpeechEntity):
     """Text-to-speech entity backed by an OpenAI-compatible endpoint."""
 
-    _attr_has_entity_name = False
+    _attr_has_entity_name = True
     _attr_supported_languages = SUPPORTED_LANGUAGES
     _attr_default_language = "zh-CN"
     _attr_supported_options = [tts.ATTR_VOICE]
@@ -63,8 +64,9 @@ class HAAITextToSpeechEntity(tts.TextToSpeechEntity):
         self._model = model
         self._voice: str = (config.get(CONF_TTS_VOICE) or "").strip()
 
-        self._attr_name = f"HA AI 文字转语音 ({model})"
+        self._attr_name = "文字转语音"
         self._attr_unique_id = f"{entry.entry_id}_tts"
+        self._attr_device_info = device_info(entry, config)
 
     @property
     def default_options(self) -> Mapping[str, Any]:

@@ -120,9 +120,13 @@ class HAAIEntity(AITaskEntity):
         data = {**entry.data, **entry.options}
         self._provider: str = data[CONF_PROVIDER]
         self._api_key: str = data.get(CONF_API_KEY, "")
-        self._chat_model: str = data.get(CONF_CHAT_MODEL) or ""
+        self._chat_model: str = (
+            data.get(CONF_CHAT_MODEL) or DEFAULTS[self._provider]["chat_model"]
+        )
         self._image_model: str = (
-            data.get(CONF_IMAGE_MODEL) or data.get(CONF_LEGACY_MODEL) or ""
+            data.get(CONF_IMAGE_MODEL)
+            or data.get(CONF_LEGACY_MODEL)
+            or DEFAULTS[self._provider]["image_model"]
         )
         base_url = data.get(CONF_BASE_URL) or DEFAULTS[self._provider]["base_url"]
         self._base_url: str = _normalize_base_url(base_url)

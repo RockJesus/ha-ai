@@ -3,24 +3,38 @@
     "step": {
       "user": {
         "title": "HA AI",
-        "description": "Choose a provider. Pollinations needs no key and only generates images. Fill a chat model to enable data generation and evaluation.",
+        "description": "Choose a provider. Base URL and models are optional: leave them empty to use the provider presets. Pollinations needs no key and only generates images; fill a chat model to enable data generation and evaluation.",
         "data": {
           "provider": "Provider",
           "api_key": "API key",
-          "base_url": "Base URL (optional, overrides the provider default)",
-          "chat_model": "Chat model (optional, enables data generation and evaluation)",
-          "image_model": "Image model (optional, enables image generation)",
+          "base_url": "Base URL (optional, blank uses the provider preset)",
+          "chat_model": "Chat model (optional, blank uses the provider preset)",
+          "image_model": "Image model (optional, blank uses the provider preset)",
           "size": "Image size (for example 1024x1024)"
         }
       }
     },
     "error": {
-      "api_key_required": "This provider requires an API key.",
-      "base_url_required": "A base URL is required for a custom OpenAI-compatible provider.",
-      "model_required": "Fill at least a chat model or an image model."
+      "api_key_required": "This provider requires an API key."
     },
     "abort": {
       "already_configured": "This provider and models are already configured."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HA AI options",
+        "description": "Leave Base URL or models empty to fall back to the provider presets.",
+        "data": {
+          "api_key": "API key",
+          "base_url": "Base URL (optional, blank uses the provider preset)",
+          "chat_model": "Chat model (optional, blank uses the provider preset)",
+          "image_model": "Image model (optional, blank uses the provider preset)",
+          "size": "Image size (for example 1024x1024)"
+        }
+      }
+    },
+    "error": {}
   }
 }

@@ -27,7 +27,6 @@ from .const import (
     DEFAULTS,
     DOMAIN,
     PROVIDER_LABELS,
-    PROVIDER_OPENAI,
     PROVIDER_POLLINATIONS,
     PROVIDERS,
 )
@@ -115,31 +114,21 @@ class HAAIConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             provider = user_input[CONF_PROVIDER]
             api_key = (user_input.get(CONF_API_KEY) or "").strip()
-            base_url = (user_input.get(CONF_BASE_URL) or "").strip()
+            base_url = _absolute_url(user_input.get(CONF_BASE_URL))
             chat_model = (user_input.get(CONF_CHAT_MODEL) or "").strip()
             image_model = (user_input.get(CONF_IMAGE_MODEL) or "").strip()
 
-            if not base_url:
-                base_url = DEFAULTS[provider]["base_url"]
-            base_url = _absolute_url(base_url)
-            if not chat_model:
-                chat_model = DEFAULTS[provider]["chat_model"]
-            if not image_model:
-                image_model = DEFAULTS[provider]["image_model"]
-
             if provider != PROVIDER_POLLINATIONS and not api_key:
                 errors["base"] = "api_key_required"
-            elif provider == PROVIDER_OPENAI and not base_url:
-                errors["base"] = "base_url_required"
-            elif not chat_model and not image_model:
-                errors["base"] = "model_required"
             else:
+                resolved_chat = chat_model or DEFAULTS[provider]["chat_model"]
+                resolved_image = image_model or DEFAULTS[provider]["image_model"]
                 await self.async_set_unique_id(
-                    f"{provider}_{chat_model}_{image_model}"
+                    f"{provider}_{resolved_chat}_{resolved_image}"
                 )
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
-                    title=image_model or chat_model,
+                    title=resolved_image or resolved_chat or PROVIDER_LABELS[provider],
                     data={
                         CONF_PROVIDER: provider,
                         CONF_API_KEY: api_key,
@@ -168,17 +157,14 @@ class HAAIOptionsFlow(OptionsFlow):
         current = {**self.config_entry.data, **self.config_entry.options}
 
         if user_input is not None:
-            chat_model = (user_input.get(CONF_CHAT_MODEL) or "").strip()
-            image_model = (user_input.get(CONF_IMAGE_MODEL) or "").strip()
-            if not chat_model and not image_model:
-                errors["base"] = "model_required"
-            else:
-                user_input[CONF_CHAT_MODEL] = chat_model
-                user_input[CONF_IMAGE_MODEL] = image_model
-                user_input[CONF_BASE_URL] = _absolute_url(
-                    user_input.get(CONF_BASE_URL)
-                )
-                return self.async_create_entry(data=user_input)
+            user_input[CONF_CHAT_MODEL] = (
+                user_input.get(CONF_CHAT_MODEL) or ""
+            ).strip()
+            user_input[CONF_IMAGE_MODEL] = (
+                user_input.get(CONF_IMAGE_MODEL) or ""
+            ).strip()
+            user_input[CONF_BASE_URL] = _absolute_url(user_input.get(CONF_BASE_URL))
+            return self.async_create_entry(data=user_input)
 
         return self.async_show_form(
             step_id="init",

@@ -42,3 +42,8 @@
 
 ### v1.0.1
 - 修复 Base URL 未带协议（例如直接填 `api.siliconflow.cn/v1`）时所有请求都抛 `InvalidUrlClientError`、图像生成 0.2 秒即失败的问题：现在保存与运行时都会自动补 `https://`。
+
+### v1.0.2
+- 配置表单与选项表单里的 Base URL、文本模型、图像模型全部改为选填：留空即使用该服务商的默认地址与默认模型，不再校验 `base_url_required` / `model_required`。
+- 运行时同步兜底：条目里存的是空值时，按 provider 的 `DEFAULTS` 取默认地址与默认模型，老条目/清空后的条目不会因此失去能力。
+- 修正中文翻译里的标题与表单文案。

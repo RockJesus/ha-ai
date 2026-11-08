@@ -74,10 +74,6 @@ class HAAIConversationEntity(conversation.ConversationEntity):
         self._llm_hass_api: list[str] = _as_api_list(
             config[CONF_LLM_HASS_API] if CONF_LLM_HASS_API in config else ["assist"]
         )
-        valid_api_ids = {api.id for api in llm.async_get_apis(self.hass)}
-        self._llm_hass_api = [api for api in self._llm_hass_api if api in valid_api_ids]
-        if not self._llm_hass_api and not config.get(CONF_LLM_HASS_API):
-            self._llm_hass_api = ["assist"] if "assist" in valid_api_ids else []
         # Same default as the official OpenAI integration: without a custom
         # prompt the model gets Home Assistant's built-in instructions.
         prompt = (config.get(CONF_PROMPT) or "").strip()
@@ -90,11 +86,18 @@ class HAAIConversationEntity(conversation.ConversationEntity):
         self._attr_name = "对话代理"
         self._attr_unique_id = f"{entry.entry_id}_conversation"
         self._attr_device_info = device_info(entry, config)
-
         if self._llm_hass_api:
             self._attr_supported_features = (
                 conversation.ConversationEntityFeature.CONTROL
             )
+
+    async def async_added_to_hass(self) -> None:
+        """Filter the configured LLM APIs once the entity has a hass handle."""
+        await super().async_added_to_hass()
+        valid_api_ids = {api.id for api in llm.async_get_apis(self.hass)}
+        self._llm_hass_api = [api for api in self._llm_hass_api if api in valid_api_ids]
+        if not self._llm_hass_api:
+            self._llm_hass_api = ["assist"] if "assist" in valid_api_ids else []
 
     @property
     def supported_languages(self) -> list[str] | Literal["*"]:

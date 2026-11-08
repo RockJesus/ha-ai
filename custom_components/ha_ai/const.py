@@ -60,10 +60,34 @@ PROVIDER_CUSTOM = "openai_compatible"
 
 # Grouped so the dropdown reads China -> overseas -> local -> custom.
 PROVIDERS = [
+    # 国内
     PROVIDER_POLLINATIONS,
     PROVIDER_SILICONFLOW,
     PROVIDER_VOLCENGINE,
+    PROVIDER_DASHSCOPE,
+    PROVIDER_ZHIPU,
+    PROVIDER_MOONSHOT,
+    PROVIDER_STEPFUN,
+    PROVIDER_MINIMAX,
+    PROVIDER_HUNYUAN,
+    PROVIDER_SPARK,
+    PROVIDER_BAICHUAN,
+    # 海外
     PROVIDER_OPENAI,
+    PROVIDER_OPENROUTER,
+    PROVIDER_GEMINI,
+    PROVIDER_GROQ,
+    PROVIDER_MISTRAL,
+    PROVIDER_TOGETHER,
+    PROVIDER_DEEPSEEK,
+    PROVIDER_XAI,
+    PROVIDER_FIREWORKS,
+    PROVIDER_CEREBRAS,
+    # 本地
+    PROVIDER_OLLAMA,
+    PROVIDER_LMSTUDIO,
+    # 自定义
+    PROVIDER_CUSTOM,
 ]
 
 # Providers that run without an API key (free endpoint or a local server).

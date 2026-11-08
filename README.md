@@ -56,6 +56,10 @@
 
 ## 更新日志
 
+### v1.0.7
+- 加入品牌图：`custom_components/ha_ai/brand/` 放 `icon.png`（256×256）/ `icon@2x.png`（512×512）/ `logo.png`（594×256）/ `logo@2x.png`（1187×512），外加深色主题用的 `dark_logo.png` 与 `dark_logo@2x.png`。HA 2026.3 起本地 `brand/` 目录自动优先于 brands CDN，集成卡片、设备页和语音助手列表直接显示新标志。
+- 标志为 H、A、I 三字母共笔构成的正方形字标：字形笔等宽、硬切方角、共享基线，白底黑色横版组合中标出现在右侧；图标为深空蓝圆角底 + 反白字形。无第三方素材、无官方品牌图。
+
 ### v1.0.6
 - 每个配置条目现在会先创建一台设备（`HA AI · <模型名>`，型号为服务商名），`ai_task` / `conversation` / `stt` / `tts` 四类实体统一挂在该设备下，设备页可直接看到能力归属。
 - 实体改用设备+实体两级命名（如 `HA AI · deepseek/deepseek-v4.1-flash` 下的「对话代理」），unique_id 与 entity_id 保持不变。

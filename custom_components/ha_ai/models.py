@@ -173,6 +173,21 @@ async def _async_pollinations_catalog(
 ) -> ModelCatalog:
     """Pollinations exposes separate text and image model endpoints."""
     catalog = ModelCatalog()
+    default_base = DEFAULTS[PROVIDER_POLLINATIONS]["base_url"].rstrip("/")
+    if base_url and base_url.rstrip("/") != default_base:
+        # A custom base URL is what the image entity will actually call, so it
+        # has to answer before we accept it.
+        try:
+            probe = await session.get(
+                f"{base_url.rstrip('/')}/models", timeout=REQUEST_TIMEOUT
+            )
+            await probe.json(content_type=None)
+            if probe.status >= 400:
+                raise ValueError(f"HTTP {probe.status}")
+        except (ClientError, TimeoutError, ValueError) as err:
+            _LOGGER.debug("Custom Pollinations base is unreachable: %s", err)
+            catalog.error = "cannot_connect"
+            return catalog
     text_url = (
         f"{base_url}/models"
         if base_url.startswith("https://text.")

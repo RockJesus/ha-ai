@@ -1,0 +1,17 @@
+{
+  "domain": "ha_ai",
+  "name": "HA AI",
+  "codeowners": [
+    "@RockJesus"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "ai_task"
+  ],
+  "documentation": "https://github.com/RockJesus/ha-ai",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "version": "1.0.0",
+  "issue_tracker": "https://github.com/RockJesus/ha-ai/issues"
+}

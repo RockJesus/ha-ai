@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "简单 AI 任务",
+        "description": "选择服务商。Pollinations 无需 Key，只提供图像生成；填写文本模型后才会启用数据生成与决策评估。",
+        "data": {
+          "provider": "服务商",
+          "api_key": "API Key",
+          "base_url": "Base URL（可选，留空用默认地址）",
+          "chat_model": "文本模型（可选，填了才启用数据生成与决策）",
+          "image_model": "图像模型（可选，填了才启用图像生成）",
+          "size": "图像尺寸（例如 1024x1024）"
+        }
+      }
+    },
+    "error": {
+      "api_key_required": "该服务商需要填写 API Key。",
+      "base_url_required": "自定义 OpenAI 兼容服务需要填写 Base URL。",
+      "model_required": "文本模型和图像模型至少要填一个。"
+    },
+    "abort": {
+      "already_configured": "该服务商与模型组合已经配置过。"
+    }
+  }
+}

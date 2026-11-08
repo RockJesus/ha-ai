@@ -25,13 +25,18 @@
     "step": {
       "init": {
         "title": "HA AI 选项",
-        "description": "Base URL 与模型都可以留空，留空时回到该服务商的默认地址与默认模型。",
+        "description": "Base URL 与模型都可以留空，留空时使用该服务商的默认地址与默认模型。填写文本模型后启用对话代理；填写语音模型后启用语音转文字 / 文字转语音。勾选“assist”API 后，对话代理即可控制已公开给语音助手的设备。",
         "data": {
           "api_key": "API Key",
           "base_url": "Base URL（选填，留空用默认地址）",
           "chat_model": "文本模型（选填，留空用默认模型）",
           "image_model": "图像模型（选填，留空用默认模型）",
-          "size": "图像尺寸（例如 1024x1024）"
+          "size": "图像尺寸（例如 1024x1024）",
+          "stt_model": "语音转文字模型（选填，留空用默认模型；硅基流动：FunAudioLLM/SenseVoiceSmall）",
+          "tts_model": "文字转语音模型（选填，留空用默认模型；硅基流动：FunAudioLLM/CosyVoice2-0.5B）",
+          "tts_voice": "音色（选填，硅基流动示例：FunAudioLLM/CosyVoice2-0.5B:alex）",
+          "llm_hass_api": "允许对话代理使用的 Home Assistant API（勾选“assist”即可控制设备）",
+          "prompt": "系统提示词（选填，留空使用 Home Assistant 默认提示词）"
         }
       }
     },

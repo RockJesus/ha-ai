@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from typing import Any
+
+from homeassistant.config_entries import ConfigEntry
+
 DOMAIN = "ha_ai"
 
 CONF_PROVIDER = "provider"
@@ -10,6 +14,13 @@ CONF_BASE_URL = "base_url"
 CONF_CHAT_MODEL = "chat_model"
 CONF_IMAGE_MODEL = "image_model"
 CONF_SIZE = "size"
+CONF_PROMPT = "prompt"
+CONF_STT_MODEL = "stt_model"
+CONF_TTS_MODEL = "tts_model"
+CONF_TTS_VOICE = "tts_voice"
+
+# Voice requests synthesize / transcribe short utterances, 120s is generous.
+DEFAULT_TIMEOUT = 120
 
 # Legacy key used before the integration supported chat models.
 CONF_LEGACY_MODEL = "model"
@@ -40,20 +51,58 @@ DEFAULTS: dict[str, dict[str, str]] = {
         "base_url": "https://image.pollinations.ai",
         "chat_model": "",
         "image_model": "flux",
+        "stt_model": "",
+        "tts_model": "",
+        "tts_voice": "",
     },
     PROVIDER_SILICONFLOW: {
         "base_url": "https://api.siliconflow.cn/v1",
         "chat_model": "",
         "image_model": "Kwai-Kolors/Kolors",
+        "stt_model": "FunAudioLLM/SenseVoiceSmall",
+        "tts_model": "FunAudioLLM/CosyVoice2-0.5B",
+        "tts_voice": "FunAudioLLM/CosyVoice2-0.5B:alex",
     },
     PROVIDER_VOLCENGINE: {
         "base_url": "https://ark.cn-beijing.volces.com/api/v3",
         "chat_model": "",
         "image_model": "doubao-seedream-5-0-260128",
+        "stt_model": "",
+        "tts_model": "",
+        "tts_voice": "",
     },
     PROVIDER_OPENAI: {
         "base_url": "",
         "chat_model": "",
         "image_model": "",
+        "stt_model": "",
+        "tts_model": "",
+        "tts_voice": "",
     },
 }
+
+VOICE_KEYS = (
+    CONF_CHAT_MODEL,
+    CONF_IMAGE_MODEL,
+    CONF_STT_MODEL,
+    CONF_TTS_MODEL,
+    CONF_TTS_VOICE,
+)
+
+
+def normalize_base_url(value: str | None) -> str:
+    """Return an absolute base URL without a trailing slash."""
+    value = (value or "").strip().rstrip("/")
+    if value and not value.startswith(("http://", "https://")):
+        value = f"https://{value}"
+    return value
+
+
+def resolve_config(entry: ConfigEntry) -> dict[str, Any]:
+    """Merge data and options, falling back to the provider defaults."""
+    config: dict[str, Any] = {**entry.data, **entry.options}
+    defaults = DEFAULTS.get(config.get(CONF_PROVIDER, ""), {})
+    for key in VOICE_KEYS:
+        if not (config.get(key) or "").strip():
+            config[key] = defaults.get(key, "")
+    return config

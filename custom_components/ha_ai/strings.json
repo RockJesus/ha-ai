@@ -25,13 +25,18 @@
     "step": {
       "init": {
         "title": "HA AI options",
-        "description": "Leave Base URL or models empty to fall back to the provider presets.",
+        "description": "Leave Base URL or models empty to fall back to the provider presets. Fill a chat model to enable the conversation agent, and a speech model to enable speech-to-text / text-to-speech. Select the 'assist' API so the agent can control devices.",
         "data": {
           "api_key": "API key",
           "base_url": "Base URL (optional, blank uses the provider preset)",
           "chat_model": "Chat model (optional, blank uses the provider preset)",
           "image_model": "Image model (optional, blank uses the provider preset)",
-          "size": "Image size (for example 1024x1024)"
+          "size": "Image size (for example 1024x1024)",
+          "stt_model": "Speech-to-text model (optional, blank uses the provider preset; SiliconFlow: FunAudioLLM/SenseVoiceSmall)",
+          "tts_model": "Text-to-speech model (optional, blank uses the provider preset; SiliconFlow: FunAudioLLM/CosyVoice2-0.5B)",
+          "tts_voice": "Voice (optional, SiliconFlow example: FunAudioLLM/CosyVoice2-0.5B:alex)",
+          "llm_hass_api": "Home Assistant APIs the agent may use (select 'assist' to control devices)",
+          "prompt": "System prompt (optional, blank uses the Home Assistant default)"
         }
       }
     },

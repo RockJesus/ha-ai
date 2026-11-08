@@ -6,12 +6,15 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "ai_task"
+    "ai_task",
+    "conversation",
+    "stt",
+    "tts"
   ],
   "documentation": "https://github.com/RockJesus/ha-ai",
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "requirements": [],
-  "version": "1.0.2",
+  "version": "1.0.3",
   "issue_tracker": "https://github.com/RockJesus/ha-ai/issues"
 }

@@ -12,8 +12,9 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
     OptionsFlow,
 )
-from homeassistant.core import callback
-from homeassistant.helpers import selector
+from homeassistant.const import CONF_LLM_HASS_API
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import llm, selector
 
 from .const import (
     CONF_API_KEY,
@@ -21,8 +22,12 @@ from .const import (
     CONF_CHAT_MODEL,
     CONF_IMAGE_MODEL,
     CONF_LEGACY_MODEL,
+    CONF_PROMPT,
     CONF_PROVIDER,
     CONF_SIZE,
+    CONF_STT_MODEL,
+    CONF_TTS_MODEL,
+    CONF_TTS_VOICE,
     DEFAULT_SIZE,
     DEFAULTS,
     DOMAIN,
@@ -70,7 +75,24 @@ DATA_SCHEMA = vol.Schema(
 )
 
 
-def _options_schema(current: dict[str, Any]) -> vol.Schema:
+def _llm_api_selector(hass: HomeAssistant) -> selector.SelectSelector:
+    """Return a multi-select of the Home Assistant LLM APIs."""
+    try:
+        apis = llm.async_get_apis(hass)
+    except Exception:  # noqa: BLE001 - discovery must never break the form
+        apis = []
+    return selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            options=[
+                selector.SelectOptionDict(value=api.id, label=api.name) for api in apis
+            ],
+            multiple=True,
+            mode=selector.SelectSelectorMode.DROPDOWN,
+        )
+    )
+
+
+def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
     """Build the options schema prefilled with the current values."""
     return vol.Schema(
         {
@@ -90,6 +112,27 @@ def _options_schema(current: dict[str, Any]) -> vol.Schema:
             vol.Optional(
                 CONF_SIZE, default=current.get(CONF_SIZE, DEFAULT_SIZE)
             ): selector.TextSelector(),
+            vol.Optional(
+                CONF_STT_MODEL, default=current.get(CONF_STT_MODEL, "")
+            ): selector.TextSelector(),
+            vol.Optional(
+                CONF_TTS_MODEL, default=current.get(CONF_TTS_MODEL, "")
+            ): selector.TextSelector(),
+            vol.Optional(
+                CONF_TTS_VOICE, default=current.get(CONF_TTS_VOICE, "")
+            ): selector.TextSelector(),
+            vol.Optional(
+                CONF_LLM_HASS_API,
+                default=current.get(CONF_LLM_HASS_API) or ["assist"],
+            ): _llm_api_selector(hass),
+            vol.Optional(
+                CONF_PROMPT, default=current.get(CONF_PROMPT, "")
+            ): selector.TextSelector(
+                selector.TextSelectorConfig(
+                    multiline=True,
+                    type=selector.TextSelectorType.TEXT,
+                )
+            ),
         }
     )
 
@@ -163,11 +206,15 @@ class HAAIOptionsFlow(OptionsFlow):
             user_input[CONF_IMAGE_MODEL] = (
                 user_input.get(CONF_IMAGE_MODEL) or ""
             ).strip()
+            for key in (CONF_STT_MODEL, CONF_TTS_MODEL, CONF_TTS_VOICE):
+                user_input[key] = (user_input.get(key) or "").strip()
+            user_input[CONF_PROMPT] = (user_input.get(CONF_PROMPT) or "").strip()
+            user_input[CONF_LLM_HASS_API] = user_input.get(CONF_LLM_HASS_API) or []
             user_input[CONF_BASE_URL] = _absolute_url(user_input.get(CONF_BASE_URL))
             return self.async_create_entry(data=user_input)
 
         return self.async_show_form(
             step_id="init",
-            data_schema=_options_schema(current),
+            data_schema=_options_schema(self.hass, current),
             errors=errors,
         )

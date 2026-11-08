@@ -1,6 +1,6 @@
 # HA AI
 
-一个 Home Assistant `ai_task` 提供者：把「AI 建议」页面需要的四类能力（数据生成、附件、图像生成、决策评估）一次补齐，支持 Pollinations（免 Key）、硅基流动、火山方舟 Seedream 与任意 OpenAI 兼容服务。
+一个 Home Assistant 的 AI 能力提供者：既补「AI 建议」页面需要的四类 `ai_task` 能力（数据生成、附件、图像生成、决策评估），也补「语音助手 → AI」页面需要的三项能力（对话代理、语音转文字、文字转语音）。支持 Pollinations（免 Key）、硅基流动、火山方舟 Seedream 与任意 OpenAI 兼容服务。
 
 ## 能力
 
@@ -12,6 +12,22 @@
 | 决策评估 | `ai_task.evaluate` | 文本模型输出 JSON 概率 / 选项 / 评分 |
 
 实体的能力位按配置动态注册：填了**文本模型**才启用数据生成、附件与决策；填了**图像模型**才启用图像生成。两个都填就是全能力。
+
+### 语音与对话
+
+| 能力 | 平台 | 实现方式 |
+|---|---|---|
+| 对话代理（可控制设备） | `conversation` | `POST {base_url}/chat/completions`，通过 Home Assistant 的 LLM API 把设备变成工具函数，模型返回 tool_calls 后由 HA 执行并循环 |
+| 语音转文字 | `stt` | `POST {base_url}/audio/transcriptions`（OpenAI 兼容），16kHz/16bit/单声道 PCM WAV 直接可用 |
+| 文字转语音 | `tts` | `POST {base_url}/audio/speech`，输出 mp3 |
+
+三项都按条目内容自动创建，不需要单独添加集成：
+
+- 条目里填了**文本模型** → 出现对话代理实体；在选项里勾选 `assist` API 后，它就能控制已公开给语音助手的设备。
+- 条目里填了**语音转文字模型** → 出现 STT 引擎；硅基流动默认 `FunAudioLLM/SenseVoiceSmall`。
+- 条目里填了**文字转语音模型** → 出现 TTS 引擎；硅基流动默认 `FunAudioLLM/CosyVoice2-0.5B`，默认音色 `FunAudioLLM/CosyVoice2-0.5B:alex`。
+
+之后在「设置 → 语音助手 → 助手 → AI」里，把对话代理、语音转文字、文字转语音分别选中 HA AI 的实体即可。
 
 ## Provider
 
@@ -40,7 +56,14 @@
 
 ## 更新日志
 
-### v1.0.1
+### v1.0.3
+- 新增 `conversation` 对话代理：走 OpenAI 兼容的 `chat/completions`，并通过 Home Assistant 的 LLM API 获得设备工具，模型发起 `tool_calls` 后由 HA 执行并继续对话（最多 10 轮）；在选项里勾选 `assist` API 即具备控制设备能力。
+- 新增 `stt` 语音转文字平台：`/audio/transcriptions`，兼容语音卫星下发的 16kHz/16bit/单声道 PCM WAV（自动补 WAV 头）。
+- 新增 `tts` 文字转语音平台：`/audio/speech`，输出 mp3，支持 `voice` 选项与默认音色。
+- 选项表单新增语音转文字模型、文字转语音模型、音色、可用 LLM API（多选，默认 `assist`）与系统提示词；三类语音/AI 实体按填写内容自动创建。
+- 硅基流动内置语音默认值：`FunAudioLLM/SenseVoiceSmall` / `FunAudioLLM/CosyVoice2-0.5B`（实测 3.5 秒合成、转写回读一致）。
+
+### v1.0.2
 - 修复 Base URL 未带协议（例如直接填 `api.siliconflow.cn/v1`）时所有请求都抛 `InvalidUrlClientError`、图像生成 0.2 秒即失败的问题：现在保存与运行时都会自动补 `https://`。
 
 ### v1.0.2

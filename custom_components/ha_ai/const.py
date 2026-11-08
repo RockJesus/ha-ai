@@ -19,6 +19,7 @@ CONF_PROMPT = "prompt"
 CONF_STT_MODEL = "stt_model"
 CONF_TTS_MODEL = "tts_model"
 CONF_TTS_VOICE = "tts_voice"
+CONF_MAX_TOKENS = "max_tokens"
 
 # Voice requests synthesize / transcribe short utterances, 120s is generous.
 DEFAULT_TIMEOUT = 120

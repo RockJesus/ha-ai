@@ -33,6 +33,22 @@
           "tts_voice": "音色（选填）",
           "size": "图像尺寸（例如 1024x1024）"
         }
+      },
+      "reauth_confirm": {
+        "title": "重新认证 HA AI",
+        "description": "服务商拒绝了当前 API Key（401/403）。为 {provider} 输入新的 Key，验证通过后原有模型、设备与实体设置都会保留。",
+        "data": {
+          "api_key": "API Key"
+        }
+      },
+      "reconfigure": {
+        "title": "重新配置 HA AI",
+        "description": "修改服务商、API Key 或 Base URL。会先用模型目录验证凭据，成功后自动重载条目，已有模型与实体保持不变。",
+        "data": {
+          "provider": "服务商",
+          "api_key": "API Key",
+          "base_url": "Base URL（留空用服务商预设）"
+        }
       }
     },
     "error": {
@@ -55,7 +71,8 @@
           "base_url": "Base URL（选填，留空用默认地址）",
           "size": "图像尺寸（例如 1024x1024）",
           "llm_hass_api": "允许对话代理使用的 Home Assistant API（勾选“assist”即可控制设备）",
-          "prompt": "系统提示词（选填，留空使用 Home Assistant 默认提示词）"
+          "prompt": "系统提示词（选填，留空使用 Home Assistant 默认提示词）",
+          "max_tokens": "回复最大 Token（256-8192）"
         }
       },
       "models": {

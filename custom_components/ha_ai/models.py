@@ -134,7 +134,10 @@ def _parse_openai_catalog(payload: Any) -> list[ModelOption]:
                     or architecture.get("modality")
                 )
                 if isinstance(modalities, str):
-                    modalities = [part.strip() for part in modalities.split("->")[-1].split("+")]
+                    modalities = [
+                        part.strip()
+                        for part in modalities.split("->")[-1].split("+")
+                    ]
             else:
                 modalities = item.get("output_modalities")
         else:
@@ -145,7 +148,9 @@ def _parse_openai_catalog(payload: Any) -> list[ModelOption]:
             ModelOption(
                 id=model_id,
                 name=_display_name(model_id, name),
-                kind=classify_model(model_id, modalities if isinstance(modalities, list) else None),
+                kind=classify_model(
+                    model_id, modalities if isinstance(modalities, list) else None
+                ),
             )
         )
     return options
@@ -168,7 +173,11 @@ async def _async_pollinations_catalog(
 ) -> ModelCatalog:
     """Pollinations exposes separate text and image model endpoints."""
     catalog = ModelCatalog()
-    text_url = f"{base_url}/models" if base_url.startswith("https://text.") else POLLINATIONS_TEXT_MODELS
+    text_url = (
+        f"{base_url}/models"
+        if base_url.startswith("https://text.")
+        else POLLINATIONS_TEXT_MODELS
+    )
     for url, forced in (
         (text_url, KIND_CHAT),
         (POLLINATIONS_IMAGE_MODELS, KIND_IMAGE),

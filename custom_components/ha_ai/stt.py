@@ -56,6 +56,7 @@ class HAAISpeechToTextEntity(stt.SpeechToTextEntity):
         self, entry: ConfigEntry, config: dict[str, Any], model: str
     ) -> None:
         """Initialize the entity."""
+        self._entry = entry
         self._base_url = normalize_base_url(config.get(CONF_BASE_URL))
         self._api_key = config.get(CONF_API_KEY) or ""
         self._prompt = config.get(CONF_PROMPT) or ""
@@ -152,6 +153,15 @@ class HAAISpeechToTextEntity(stt.SpeechToTextEntity):
                 headers=headers,
                 timeout=aiohttp.ClientTimeout(total=DEFAULT_TIMEOUT),
             ) as response:
+                if response.status in (401, 403):
+                    body = (await response.text())[:300]
+                    self._entry.async_start_reauth(self.hass)
+                    _LOGGER.error(
+                        "Transcription rejected the API key (%s): %s",
+                        response.status,
+                        body,
+                    )
+                    return stt.SpeechResult(None, stt.SpeechResultState.ERROR)
                 if response.status != 200:
                     body = (await response.text())[:300]
                     _LOGGER.error(

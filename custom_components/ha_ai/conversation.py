@@ -26,6 +26,7 @@ from .const import (
     CONF_BASE_URL,
     CONF_CHAT_MODEL,
     CONF_IMAGE_MODEL,
+    CONF_MAX_TOKENS,
     CONF_PROMPT,
     DEFAULT_MAX_TOKENS,
     DEFAULT_TIMEOUT,
@@ -65,6 +66,7 @@ class HAAIConversationEntity(conversation.ConversationEntity):
 
     def __init__(self, entry: ConfigEntry, config: dict[str, Any]) -> None:
         """Initialize the agent."""
+        self._entry = entry
         self._config = config
         self._chat_model: str = config[CONF_CHAT_MODEL]
         self._base_url = normalize_base_url(config.get(CONF_BASE_URL))
@@ -72,7 +74,18 @@ class HAAIConversationEntity(conversation.ConversationEntity):
         self._llm_hass_api: list[str] = _as_api_list(
             config[CONF_LLM_HASS_API] if CONF_LLM_HASS_API in config else ["assist"]
         )
-        self._prompt: str | None = config.get(CONF_PROMPT) or None
+        valid_api_ids = {api.id for api in llm.async_get_apis(self.hass)}
+        self._llm_hass_api = [api for api in self._llm_hass_api if api in valid_api_ids]
+        if not self._llm_hass_api and not config.get(CONF_LLM_HASS_API):
+            self._llm_hass_api = ["assist"] if "assist" in valid_api_ids else []
+        # Same default as the official OpenAI integration: without a custom
+        # prompt the model gets Home Assistant's built-in instructions.
+        prompt = (config.get(CONF_PROMPT) or "").strip()
+        self._prompt: str | None = prompt or llm.DEFAULT_INSTRUCTIONS_PROMPT
+        try:
+            self._max_tokens = int(config.get(CONF_MAX_TOKENS) or DEFAULT_MAX_TOKENS)
+        except (TypeError, ValueError):
+            self._max_tokens = DEFAULT_MAX_TOKENS
 
         self._attr_name = "对话代理"
         self._attr_unique_id = f"{entry.entry_id}_conversation"
@@ -131,7 +144,9 @@ class HAAIConversationEntity(conversation.ConversationEntity):
                 return
 
         _LOGGER.warning(
-            "Stopped after %s tool iterations for %s", MAX_TOOL_ITERATIONS, self.entity_id
+            "Stopped after %s tool iterations for %s",
+            MAX_TOOL_ITERATIONS,
+            self.entity_id,
         )
 
     @staticmethod
@@ -146,7 +161,11 @@ class HAAIConversationEntity(conversation.ConversationEntity):
 
             arguments = function.get("arguments") or "{}"
             try:
-                tool_args = json.loads(arguments) if isinstance(arguments, str) else arguments
+                tool_args = (
+                    json.loads(arguments)
+                    if isinstance(arguments, str)
+                    else arguments
+                )
             except json.JSONDecodeError:
                 _LOGGER.warning("Invalid tool arguments for %s: %s", name, arguments)
                 tool_args = {}
@@ -165,7 +184,7 @@ class HAAIConversationEntity(conversation.ConversationEntity):
             "model": self._chat_model,
             "messages": _convert_content(chat_log.content),
             "stream": False,
-            "max_tokens": DEFAULT_MAX_TOKENS,
+            "max_tokens": self._max_tokens,
         }
 
         if chat_log.llm_api and chat_log.llm_api.tools:
@@ -187,6 +206,12 @@ class HAAIConversationEntity(conversation.ConversationEntity):
                 headers=headers,
                 timeout=aiohttp.ClientTimeout(total=DEFAULT_TIMEOUT),
             ) as response:
+                if response.status in (401, 403):
+                    body = (await response.text())[:300]
+                    self._entry.async_start_reauth(self.hass)
+                    raise HomeAssistantError(
+                        f"Provider rejected the API key ({response.status}): {body}"
+                    )
                 if response.status != 200:
                     body = (await response.text())[:300]
                     raise HomeAssistantError(
@@ -201,7 +226,9 @@ class HAAIConversationEntity(conversation.ConversationEntity):
         try:
             return data["choices"][0]["message"]
         except (KeyError, IndexError, TypeError) as err:
-            raise HomeAssistantError(f"Unexpected chat completions response: {data}") from err
+            raise HomeAssistantError(
+                f"Unexpected chat completions response: {data}"
+            ) from err
 
 
 def _as_api_list(value: Any) -> list[str]:

@@ -28,12 +28,14 @@ from .const import (
     CONF_CHAT_MODEL,
     CONF_IMAGE_MODEL,
     CONF_LEGACY_MODEL,
+    CONF_MAX_TOKENS,
     CONF_PROMPT,
     CONF_PROVIDER,
     CONF_SIZE,
     CONF_STT_MODEL,
     CONF_TTS_MODEL,
     CONF_TTS_VOICE,
+    DEFAULT_MAX_TOKENS,
     DEFAULT_SIZE,
     DEFAULTS,
     DOMAIN,
@@ -81,7 +83,9 @@ def _secret_selector() -> selector.TextSelector:
 
 CREDENTIALS_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_PROVIDER, default=PROVIDER_POLLINATIONS): _provider_selector(),
+        vol.Required(
+            CONF_PROVIDER, default=PROVIDER_POLLINATIONS
+        ): _provider_selector(),
         vol.Optional(CONF_API_KEY, default=""): _secret_selector(),
         vol.Optional(CONF_BASE_URL, default=""): selector.TextSelector(),
     }
@@ -282,6 +286,11 @@ def _clean_models(user_input: dict[str, Any]) -> dict[str, Any]:
         value = (data.get(key) or "").strip()
         data[key] = "" if value == USE_DEFAULT else value
     data[CONF_SIZE] = (data.get(CONF_SIZE) or DEFAULT_SIZE).strip()
+    if CONF_MAX_TOKENS in data:
+        try:
+            data[CONF_MAX_TOKENS] = int(data.get(CONF_MAX_TOKENS) or DEFAULT_MAX_TOKENS)
+        except (TypeError, ValueError):
+            data[CONF_MAX_TOKENS] = DEFAULT_MAX_TOKENS
     if CONF_API_KEY in data:
         data[CONF_API_KEY] = (data.get(CONF_API_KEY) or "").strip()
     if CONF_BASE_URL in data:
@@ -308,6 +317,7 @@ class HAAIConfigFlow(ConfigFlow, domain=DOMAIN):
         self._credentials: dict[str, Any] = {}
         self._catalog: ModelCatalog | None = None
         self._fetch_error: str | None = None
+        self._reauth_entry: ConfigEntry | None = None
 
     @staticmethod
     @callback
@@ -359,6 +369,101 @@ class HAAIConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=schema,
+            errors=errors,
+        )
+
+    async def async_step_reauth(
+        self, entry_data: dict[str, Any]
+    ) -> ConfigFlowResult:
+        """Start re-authentication when the provider rejects the stored key."""
+        self._reauth_entry = self._get_reauth_entry()
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask for a fresh API key and prove it against the provider."""
+        entry = self._reauth_entry
+        assert entry is not None
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            api_key = (user_input.get(CONF_API_KEY) or "").strip()
+            catalog = await async_fetch_catalog(
+                self.hass,
+                entry.data.get(CONF_PROVIDER, PROVIDER_POLLINATIONS),
+                entry.data.get(CONF_BASE_URL),
+                api_key,
+            )
+            if catalog.error == "invalid_auth":
+                errors["base"] = "invalid_auth"
+            elif catalog.error == "cannot_connect":
+                errors["base"] = "cannot_connect"
+            else:
+                return self.async_update_reload_and_abort(
+                    entry, data_updates={CONF_API_KEY: api_key}
+                )
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema(
+                {vol.Required(CONF_API_KEY): _secret_selector()}
+            ),
+            errors=errors,
+            description_placeholders={
+                "provider": PROVIDER_LABELS.get(
+                    entry.data.get(CONF_PROVIDER, ""),
+                    entry.data.get(CONF_PROVIDER, ""),
+                )
+            },
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Change provider / key / base URL without deleting the entry."""
+        entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+        suggested = {
+            CONF_PROVIDER: entry.data.get(CONF_PROVIDER, PROVIDER_POLLINATIONS),
+            CONF_API_KEY: entry.data.get(CONF_API_KEY, ""),
+            CONF_BASE_URL: entry.data.get(CONF_BASE_URL, ""),
+        }
+
+        if user_input is not None:
+            provider = user_input[CONF_PROVIDER]
+            api_key = (user_input.get(CONF_API_KEY) or "").strip()
+            base_url = normalize_base_url(user_input.get(CONF_BASE_URL))
+            suggested = {
+                CONF_PROVIDER: provider,
+                CONF_API_KEY: api_key,
+                CONF_BASE_URL: base_url,
+            }
+            if provider != PROVIDER_POLLINATIONS and not api_key:
+                errors["base"] = "api_key_required"
+            else:
+                catalog = await async_fetch_catalog(
+                    self.hass, provider, base_url, api_key
+                )
+                if catalog.error == "invalid_auth":
+                    errors["base"] = "invalid_auth"
+                elif catalog.error == "cannot_connect":
+                    errors["base"] = "cannot_connect"
+                else:
+                    return self.async_update_reload_and_abort(
+                        entry,
+                        data_updates={
+                            CONF_PROVIDER: provider,
+                            CONF_API_KEY: api_key,
+                            CONF_BASE_URL: base_url,
+                        },
+                    )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                CREDENTIALS_SCHEMA, suggested
+            ),
             errors=errors,
         )
 
@@ -446,10 +551,18 @@ def _settings_schema(
                 CONF_LLM_HASS_API, default=current.get(CONF_LLM_HASS_API) or ["assist"]
             ): _llm_api_selector(hass),
             vol.Optional(
-                CONF_PROMPT, default=current.get(CONF_PROMPT, "")
-            ): selector.TextSelector(
-                selector.TextSelectorConfig(
-                    multiline=True, type=selector.TextSelectorType.TEXT
+                CONF_PROMPT,
+                description={
+                    "suggested_value": current.get(CONF_PROMPT)
+                    or llm.DEFAULT_INSTRUCTIONS_PROMPT
+                },
+            ): selector.TemplateSelector(),
+            vol.Optional(
+                CONF_MAX_TOKENS,
+                default=int(current.get(CONF_MAX_TOKENS) or DEFAULT_MAX_TOKENS),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=256, max=8192, step=256, mode=selector.NumberSelectorMode.BOX
                 )
             ),
         }
@@ -477,8 +590,16 @@ class HAAIOptionsFlow(OptionsFlow):
             # already stored on the entry instead of blanking them.
             settings = {**current, **user_input}
             settings[CONF_API_KEY] = (settings.get(CONF_API_KEY) or "").strip()
-            settings[CONF_BASE_URL] = normalize_base_url(settings.get(CONF_BASE_URL)) or ""
+            settings[CONF_BASE_URL] = (
+                normalize_base_url(settings.get(CONF_BASE_URL)) or ""
+            )
             settings[CONF_SIZE] = (settings.get(CONF_SIZE) or DEFAULT_SIZE).strip()
+            try:
+                settings[CONF_MAX_TOKENS] = int(
+                    settings.get(CONF_MAX_TOKENS) or DEFAULT_MAX_TOKENS
+                )
+            except (TypeError, ValueError):
+                settings[CONF_MAX_TOKENS] = DEFAULT_MAX_TOKENS
             settings[CONF_LLM_HASS_API] = settings.get(CONF_LLM_HASS_API) or []
             settings[CONF_PROMPT] = (settings.get(CONF_PROMPT) or "").strip()
             settings[CONF_PROVIDER] = provider
@@ -505,7 +626,9 @@ class HAAIOptionsFlow(OptionsFlow):
         return self.async_show_form(
             step_id="init",
             data_schema=_settings_schema(self.hass, provider, current),
-            description_placeholders={"provider": PROVIDER_LABELS.get(provider, provider)},
+            description_placeholders={
+                "provider": PROVIDER_LABELS.get(provider, provider)
+            },
         )
 
     async def async_step_models(

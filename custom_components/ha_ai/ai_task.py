@@ -360,6 +360,11 @@ class HAAIEntity(AITaskEntity):
             status = resp.status
             text = await resp.text()
 
+        if status in (401, 403):
+            self._entry.async_start_reauth(self.hass)
+            raise HomeAssistantError(
+                f"Provider rejected the API key ({status}): {text[:300]}"
+            )
         if status != 200:
             raise HomeAssistantError(
                 f"Image API returned HTTP {status}: {text[:300]}"
@@ -430,6 +435,11 @@ class HAAIEntity(AITaskEntity):
             payload.pop("response_format", None)
             status, text = await self._post_chat(session, payload)
 
+        if status in (401, 403):
+            self._entry.async_start_reauth(self.hass)
+            raise HomeAssistantError(
+                f"Provider rejected the API key ({status}): {text[:300]}"
+            )
         if status != 200:
             raise HomeAssistantError(
                 f"Chat API returned HTTP {status}: {text[:300]}"

@@ -33,6 +33,22 @@
           "tts_voice": "Voice (optional)",
           "size": "Image size (for example 1024x1024)"
         }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate HA AI",
+        "description": "The provider rejected the stored API key (401/403). Enter a new key for {provider}; models, devices and entities are kept.",
+        "data": {
+          "api_key": "API Key"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure HA AI",
+        "description": "Change the provider, API key or base URL. The credentials are verified against the model catalogue and the entry reloads; existing models and entities stay.",
+        "data": {
+          "provider": "Provider",
+          "api_key": "API Key",
+          "base_url": "Base URL (blank uses the provider preset)"
+        }
       }
     },
     "error": {
@@ -55,7 +71,8 @@
           "base_url": "Base URL (optional, blank uses the provider preset)",
           "size": "Image size (for example 1024x1024)",
           "llm_hass_api": "Home Assistant APIs the agent may use (select 'assist' to control devices)",
-          "prompt": "System prompt (optional, blank uses the Home Assistant default)"
+          "prompt": "System prompt (optional, blank uses the Home Assistant default)",
+          "max_tokens": "Max response tokens (256-8192)"
         }
       },
       "models": {

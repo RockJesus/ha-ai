@@ -58,6 +58,7 @@ class HAAITextToSpeechEntity(tts.TextToSpeechEntity):
         self, entry: ConfigEntry, config: dict[str, Any], model: str
     ) -> None:
         """Initialize the entity."""
+        self._entry = entry
         self._base_url = normalize_base_url(config.get(CONF_BASE_URL))
         self._api_key = config.get(CONF_API_KEY) or ""
         self._model = model
@@ -106,6 +107,12 @@ class HAAITextToSpeechEntity(tts.TextToSpeechEntity):
                 headers=headers,
                 timeout=aiohttp.ClientTimeout(total=DEFAULT_TIMEOUT),
             ) as response:
+                if response.status in (401, 403):
+                    body = (await response.text())[:300]
+                    self._entry.async_start_reauth(self.hass)
+                    raise HomeAssistantError(
+                        f"Provider rejected the API key ({response.status}): {body}"
+                    )
                 if response.status != 200:
                     body = (await response.text())[:300]
                     raise HomeAssistantError(
@@ -113,7 +120,9 @@ class HAAITextToSpeechEntity(tts.TextToSpeechEntity):
                     )
                 audio = await response.read()
         except (aiohttp.ClientError, TimeoutError) as err:
-            raise HomeAssistantError(f"Speech generation request failed: {err}") from err
+            raise HomeAssistantError(
+                f"Speech generation request failed: {err}"
+            ) from err
 
         if not audio:
             return None, None

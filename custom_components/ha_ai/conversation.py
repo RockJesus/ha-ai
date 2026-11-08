@@ -65,7 +65,7 @@ class HAAIConversationEntity(conversation.ConversationEntity):
         self._chat_model: str = config[CONF_CHAT_MODEL]
         self._base_url = normalize_base_url(config.get(CONF_BASE_URL))
         self._api_key: str = config.get(CONF_API_KEY) or ""
-        self._llm_hass_api: list[str] = config.get(CONF_LLM_HASS_API) or []
+        self._llm_hass_api: list[str] = _as_api_list(config.get(CONF_LLM_HASS_API))
         self._prompt: str | None = config.get(CONF_PROMPT) or None
 
         self._attr_name = f"HA AI: {self._chat_model}"
@@ -194,6 +194,15 @@ class HAAIConversationEntity(conversation.ConversationEntity):
             return data["choices"][0]["message"]
         except (KeyError, IndexError, TypeError) as err:
             raise HomeAssistantError(f"Unexpected chat completions response: {data}") from err
+
+
+def _as_api_list(value: Any) -> list[str]:
+    """Normalize the stored LLM API selection into a list of ids."""
+    if not value:
+        return []
+    if isinstance(value, str):
+        return [value]
+    return [str(item) for item in value]
 
 
 def _format_tool(

@@ -52,6 +52,7 @@ from .const import (
     PROVIDER_SILICONFLOW,
     PROVIDER_VOLCENGINE,
     device_info,
+    provider_error_hint,
 )
 
 PARALLEL_UPDATES = 1
@@ -161,11 +162,11 @@ class HAAIEntity(AITaskEntity):
     ) -> GenDataTaskResult:
         """Generate structured or free-form data with the chat model."""
         if not self._chat_model:
-            raise HomeAssistantError("No chat model is configured for this entry")
+            raise HomeAssistantError("该条目没有配置对话模型，请到集成选项里重新选择。")
 
         instructions = (task.instructions or "").strip()
         if not instructions:
-            raise HomeAssistantError("The task instructions are empty")
+            raise HomeAssistantError("任务指令为空，请填写要生成的内容。")
 
         system_prompt = DATA_SYSTEM_PROMPT
         response_format: dict[str, str] | None = None
@@ -208,7 +209,7 @@ class HAAIEntity(AITaskEntity):
     async def _async_evaluate(self, task: EvaluationTask) -> EvaluationTaskResult:
         """Answer the evaluation questions with the chat model."""
         if not self._chat_model:
-            raise HomeAssistantError("No chat model is configured for this entry")
+            raise HomeAssistantError("该条目没有配置对话模型，请到集成选项里重新选择。")
 
         questions = task.questions or {}
         if not questions:
@@ -263,11 +264,11 @@ class HAAIEntity(AITaskEntity):
     ) -> GenImageTaskResult:
         """Generate an image based on the task instructions."""
         if not self._image_model:
-            raise HomeAssistantError("No image model is configured for this entry")
+            raise HomeAssistantError("该条目没有配置图像模型，请到集成选项里重新选择。")
 
         prompt = (task.instructions or "").strip()
         if not prompt:
-            raise HomeAssistantError("The image prompt is empty")
+            raise HomeAssistantError("图像提示词为空，请填写要画的内容。")
 
         session = async_get_clientsession(self.hass)
 
@@ -277,7 +278,7 @@ class HAAIEntity(AITaskEntity):
             else:
                 image_data, mime_type = await self._images_api(session, prompt)
         except (ClientError, asyncio.TimeoutError, TimeoutError) as err:
-            raise HomeAssistantError(f"Image request failed: {err}") from err
+            raise HomeAssistantError(f"连接服务商失败：{err}") from err
 
         real_width, real_height = _image_dimensions(image_data)
 
@@ -305,12 +306,10 @@ class HAAIEntity(AITaskEntity):
         async with session.get(url, params=params, timeout=REQUEST_TIMEOUT) as resp:
             if resp.status != 200:
                 body = await resp.text()
-                raise HomeAssistantError(
-                    f"Pollinations returned HTTP {resp.status}: {body[:200]}"
-                )
+                raise HomeAssistantError(provider_error_hint(resp.status, body))
             content = await resp.read()
             if not content:
-                raise HomeAssistantError("Pollinations returned an empty image")
+                raise HomeAssistantError("服务商没有返回图片内容，请稍后重试。")
             return content, _normalize_mime(resp.content_type, url)
 
     async def _images_api(
@@ -362,13 +361,9 @@ class HAAIEntity(AITaskEntity):
 
         if status in (401, 403):
             self._entry.async_start_reauth(self.hass)
-            raise HomeAssistantError(
-                f"Provider rejected the API key ({status}): {text[:300]}"
-            )
+            raise HomeAssistantError(provider_error_hint(status, text))
         if status != 200:
-            raise HomeAssistantError(
-                f"Image API returned HTTP {status}: {text[:300]}"
-            )
+            raise HomeAssistantError(provider_error_hint(status, text))
 
         try:
             body = json.loads(text)
@@ -383,7 +378,7 @@ class HAAIEntity(AITaskEntity):
             try:
                 return base64.b64decode(b64), "image/png"
             except ValueError as err:
-                raise HomeAssistantError("Invalid base64 image payload") from err
+                raise HomeAssistantError("服务商返回的图片数据无法解析。") from err
 
         image_url = item.get("url") or body.get("url")
         if not image_url:
@@ -394,13 +389,13 @@ class HAAIEntity(AITaskEntity):
         async with session.get(image_url, timeout=REQUEST_TIMEOUT) as resp:
             if resp.status != 200:
                 raise HomeAssistantError(
-                    f"Failed to download generated image: HTTP {resp.status}"
+                    provider_error_hint(resp.status, "下载生成的图片失败")
                 )
             content = await resp.read()
             mime_type = _normalize_mime(resp.content_type, image_url)
 
         if not content:
-            raise HomeAssistantError("Generated image is empty")
+            raise HomeAssistantError("服务商没有返回图片内容，请稍后重试。")
 
         return content, mime_type
 
@@ -437,13 +432,9 @@ class HAAIEntity(AITaskEntity):
 
         if status in (401, 403):
             self._entry.async_start_reauth(self.hass)
-            raise HomeAssistantError(
-                f"Provider rejected the API key ({status}): {text[:300]}"
-            )
+            raise HomeAssistantError(provider_error_hint(status, text))
         if status != 200:
-            raise HomeAssistantError(
-                f"Chat API returned HTTP {status}: {text[:300]}"
-            )
+            raise HomeAssistantError(provider_error_hint(status, text))
 
         try:
             body = json.loads(text)
@@ -487,7 +478,7 @@ class HAAIEntity(AITaskEntity):
             ) as resp:
                 return resp.status, await resp.text()
         except (ClientError, asyncio.TimeoutError, TimeoutError) as err:
-            raise HomeAssistantError(f"Chat request failed: {err}") from err
+            raise HomeAssistantError(f"连接服务商失败：{err}") from err
 
     async def _build_user_content(
         self, text: str, attachments

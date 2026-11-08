@@ -33,6 +33,7 @@ from .const import (
     DOMAIN,
     device_info,
     normalize_base_url,
+    provider_error_hint,
     resolve_config,
 )
 
@@ -212,19 +213,15 @@ class HAAIConversationEntity(conversation.ConversationEntity):
                 if response.status in (401, 403):
                     body = (await response.text())[:300]
                     self._entry.async_start_reauth(self.hass)
-                    raise HomeAssistantError(
-                        f"Provider rejected the API key ({response.status}): {body}"
-                    )
+                    raise HomeAssistantError(provider_error_hint(response.status, body))
                 if response.status != 200:
                     body = (await response.text())[:300]
-                    raise HomeAssistantError(
-                        f"Chat completions failed ({response.status}): {body}"
-                    )
+                    raise HomeAssistantError(provider_error_hint(response.status, body))
                 data = await response.json()
         except aiohttp.ClientError as err:
-            raise HomeAssistantError(f"Chat completions request failed: {err}") from err
+            raise HomeAssistantError(f"连接服务商失败：{err}") from err
         except TimeoutError as err:
-            raise HomeAssistantError("Chat completions request timed out") from err
+            raise HomeAssistantError("请求服务商超时，请稍后重试。") from err
 
         try:
             return data["choices"][0]["message"]

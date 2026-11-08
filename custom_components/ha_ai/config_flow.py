@@ -473,7 +473,12 @@ class HAAIOptionsFlow(OptionsFlow):
         provider = current.get(CONF_PROVIDER, PROVIDER_POLLINATIONS)
 
         if user_input is not None:
-            settings = _clean_models(user_input)
+            # The init form does not carry the model fields; keep the values
+            # already stored on the entry instead of blanking them.
+            settings = {**current, **user_input}
+            settings[CONF_API_KEY] = (settings.get(CONF_API_KEY) or "").strip()
+            settings[CONF_BASE_URL] = normalize_base_url(settings.get(CONF_BASE_URL)) or ""
+            settings[CONF_SIZE] = (settings.get(CONF_SIZE) or DEFAULT_SIZE).strip()
             settings[CONF_LLM_HASS_API] = settings.get(CONF_LLM_HASS_API) or []
             settings[CONF_PROMPT] = (settings.get(CONF_PROMPT) or "").strip()
             settings[CONF_PROVIDER] = provider

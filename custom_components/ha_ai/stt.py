@@ -114,7 +114,7 @@ class HAAISpeechToTextEntity(stt.SpeechToTextEntity):
 
     def _record_error(self, message: str, status: int | None) -> None:
         """Log a readable reason and expose it on the entity."""
-        _LOGGER.warning("语音转文字失败：%s", message)
+        _LOGGER.error("语音转文字失败：%s", message)
         self._attr_extra_state_attributes = {
             "last_error": message,
             "last_error_status": status,

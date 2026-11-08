@@ -343,8 +343,11 @@ class HAAIConfigFlow(ConfigFlow, domain=DOMAIN):
                 catalog = await async_fetch_catalog(
                     self.hass, provider, base_url, api_key
                 )
-                if catalog.error == "invalid_auth":
-                    errors["base"] = "invalid_auth"
+                if catalog.error:
+                    # Model ids must come from the provider, so a failed
+                    # catalogue keeps the user on this step instead of falling
+                    # back to typing a model id by hand.
+                    errors["base"] = catalog.error
                 else:
                     self._credentials = {
                         CONF_PROVIDER: provider,
@@ -352,10 +355,8 @@ class HAAIConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_BASE_URL: base_url,
                     }
                     self._catalog = catalog
-                    self._fetch_error = catalog.error
-                    if catalog.ok:
-                        return await self.async_step_models()
-                    return await self.async_step_manual()
+                    self._fetch_error = None
+                    return await self.async_step_models()
 
             # Re-render the credential form while keeping what was typed.
             self._credentials = {
@@ -610,15 +611,13 @@ class HAAIOptionsFlow(OptionsFlow):
             self._settings = settings
             self._catalog = catalog
             self._fetch_error = catalog.error
-            if catalog.error == "invalid_auth":
+            if catalog.error:
                 return self.async_show_form(
                     step_id="init",
                     data_schema=_settings_schema(self.hass, provider, current),
-                    errors={"base": "invalid_auth"},
+                    errors={"base": catalog.error},
                 )
-            if catalog.ok:
-                return await self.async_step_models()
-            return await self.async_step_manual()
+            return await self.async_step_models()
 
         return self.async_show_form(
             step_id="init",

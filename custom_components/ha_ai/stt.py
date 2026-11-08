@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterable
 import io
 import logging
-from typing import Any
 import wave
+from collections.abc import AsyncIterable
+from typing import Any
 
 import aiohttp
-
 from homeassistant.components import stt
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant

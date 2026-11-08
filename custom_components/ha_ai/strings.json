@@ -3,43 +3,90 @@
     "step": {
       "user": {
         "title": "HA AI",
-        "description": "Choose a provider. Base URL and models are optional: leave them empty to use the provider presets. Pollinations needs no key and only generates images; fill a chat model to enable data generation and evaluation.",
+        "description": "Choose a provider. The API key is checked and the model list is downloaded from the provider, so the next step offers real models as dropdowns. Leave Base URL empty to use the provider preset. Pollinations needs no key and only generates images until a chat model is selected.",
         "data": {
           "provider": "Provider",
           "api_key": "API key",
-          "base_url": "Base URL (optional, blank uses the provider preset)",
-          "chat_model": "Chat model (optional, blank uses the provider preset)",
-          "image_model": "Image model (optional, blank uses the provider preset)",
+          "base_url": "Base URL (optional, blank uses the provider preset)"
+        }
+      },
+      "models": {
+        "title": "HA AI models",
+        "description": "Loaded {count} models from the provider. Pick the ones you need; the first entry of each list means \"use the provider default\" and keeps working if the preset changes.",
+        "data": {
+          "chat_model": "Chat model",
+          "image_model": "Image model",
+          "stt_model": "Speech-to-text model",
+          "tts_model": "Text-to-speech model",
+          "tts_voice": "Voice",
+          "size": "Image size (for example 1024x1024)"
+        }
+      },
+      "manual": {
+        "title": "HA AI models (manual)",
+        "description": "This provider did not return a model catalogue. Type the model ids, or leave them empty to use the provider presets.",
+        "data": {
+          "chat_model": "Chat model (optional)",
+          "image_model": "Image model (optional)",
+          "stt_model": "Speech-to-text model (optional)",
+          "tts_model": "Text-to-speech model (optional)",
+          "tts_voice": "Voice (optional)",
           "size": "Image size (for example 1024x1024)"
         }
       }
     },
     "error": {
-      "api_key_required": "This provider requires an API key."
+      "api_key_required": "This provider requires an API key.",
+      "invalid_auth": "The provider rejected this API key.",
+      "cannot_connect": "Could not load the model list from this provider. Check the Base URL and the network, then use the manual form.",
+      "unknown": "Unexpected error while loading the model list."
     },
     "abort": {
-      "already_configured": "This provider and models are already configured."
+      "already_configured": "This provider, endpoint and model combination is already configured."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "HA AI options",
-        "description": "Leave Base URL or models empty to fall back to the provider presets. Fill a chat model to enable the conversation agent, and a speech model to enable speech-to-text / text-to-speech. Select the 'assist' API so the agent can control devices.",
+        "description": "Connection settings for {provider}. Saving re-downloads the model list so the next step offers the current models as dropdowns.",
         "data": {
           "api_key": "API key",
           "base_url": "Base URL (optional, blank uses the provider preset)",
-          "chat_model": "Chat model (optional, blank uses the provider preset)",
-          "image_model": "Image model (optional, blank uses the provider preset)",
           "size": "Image size (for example 1024x1024)",
-          "stt_model": "Speech-to-text model (optional, blank uses the provider preset; SiliconFlow: FunAudioLLM/SenseVoiceSmall)",
-          "tts_model": "Text-to-speech model (optional, blank uses the provider preset; SiliconFlow: FunAudioLLM/CosyVoice2-0.5B)",
-          "tts_voice": "Voice (optional, SiliconFlow example: FunAudioLLM/CosyVoice2-0.5B:alex)",
           "llm_hass_api": "Home Assistant APIs the agent may use (select 'assist' to control devices)",
           "prompt": "System prompt (optional, blank uses the Home Assistant default)"
         }
+      },
+      "models": {
+        "title": "HA AI models",
+        "description": "Loaded {count} models from the provider. The first entry of each list keeps the provider default.",
+        "data": {
+          "chat_model": "Chat model",
+          "image_model": "Image model",
+          "stt_model": "Speech-to-text model",
+          "tts_model": "Text-to-speech model",
+          "tts_voice": "Voice",
+          "size": "Image size (for example 1024x1024)"
+        }
+      },
+      "manual": {
+        "title": "HA AI models (manual)",
+        "description": "The provider did not return a model catalogue. Type the model ids, or leave them empty to use the provider presets.",
+        "data": {
+          "chat_model": "Chat model (optional)",
+          "image_model": "Image model (optional)",
+          "stt_model": "Speech-to-text model (optional)",
+          "tts_model": "Text-to-speech model (optional)",
+          "tts_voice": "Voice (optional)",
+          "size": "Image size (for example 1024x1024)"
+        }
       }
     },
-    "error": {}
+    "error": {
+      "invalid_auth": "The provider rejected this API key.",
+      "cannot_connect": "Could not load the model list from this provider.",
+      "unknown": "Unexpected error while loading the model list."
+    }
   }
 }

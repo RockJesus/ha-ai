@@ -19,7 +19,6 @@ from pathlib import Path
 from urllib.parse import quote
 
 from aiohttp import ClientError, ClientSession, ClientTimeout
-
 from homeassistant.components.ai_task import (
     AITaskEntity,
     AITaskEntityFeature,

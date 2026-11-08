@@ -22,6 +22,7 @@ from .const import (
     DEFAULT_TIMEOUT,
     device_info,
     normalize_base_url,
+    provider_error_hint,
     resolve_config,
 )
 
@@ -111,17 +112,17 @@ class HAAITextToSpeechEntity(tts.TextToSpeechEntity):
                     body = (await response.text())[:300]
                     self._entry.async_start_reauth(self.hass)
                     raise HomeAssistantError(
-                        f"Provider rejected the API key ({response.status}): {body}"
+                        provider_error_hint(response.status, body)
                     )
                 if response.status != 200:
                     body = (await response.text())[:300]
                     raise HomeAssistantError(
-                        f"Speech generation failed ({response.status}): {body}"
+                        provider_error_hint(response.status, body)
                     )
                 audio = await response.read()
         except (aiohttp.ClientError, TimeoutError) as err:
             raise HomeAssistantError(
-                f"Speech generation request failed: {err}"
+                f"连接服务商失败：{err}"
             ) from err
 
         if not audio:

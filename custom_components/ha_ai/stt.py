@@ -23,6 +23,7 @@ from .const import (
     DEFAULT_TIMEOUT,
     device_info,
     normalize_base_url,
+    provider_error_hint,
     resolve_config,
 )
 
@@ -111,6 +112,14 @@ class HAAISpeechToTextEntity(stt.SpeechToTextEntity):
         """Return a list of supported channels."""
         return [stt.AudioChannels.CHANNEL_MONO, stt.AudioChannels.CHANNEL_STEREO]
 
+    def _record_error(self, message: str, status: int | None) -> None:
+        """Log a readable reason and expose it on the entity."""
+        _LOGGER.warning("语音转文字失败：%s", message)
+        self._attr_extra_state_attributes = {
+            "last_error": message,
+            "last_error_status": status,
+        }
+
     async def async_process_audio_stream(
         self, metadata: stt.SpeechMetadata, stream: AsyncIterable[bytes]
     ) -> stt.SpeechResult:
@@ -156,25 +165,25 @@ class HAAISpeechToTextEntity(stt.SpeechToTextEntity):
                 if response.status in (401, 403):
                     body = (await response.text())[:300]
                     self._entry.async_start_reauth(self.hass)
-                    _LOGGER.error(
-                        "Transcription rejected the API key (%s): %s",
-                        response.status,
-                        body,
+                    self._record_error(
+                        provider_error_hint(response.status, body), response.status
                     )
                     return stt.SpeechResult(None, stt.SpeechResultState.ERROR)
                 if response.status != 200:
                     body = (await response.text())[:300]
-                    _LOGGER.error(
-                        "Transcription failed (%s): %s", response.status, body
+                    self._record_error(
+                        provider_error_hint(response.status, body), response.status
                     )
                     return stt.SpeechResult(None, stt.SpeechResultState.ERROR)
                 data = await response.json()
         except (aiohttp.ClientError, TimeoutError) as err:
-            _LOGGER.error("Error during transcription: %s", err)
+            self._record_error(f"连接服务商失败：{err}", None)
             return stt.SpeechResult(None, stt.SpeechResultState.ERROR)
 
         text = (data.get("text") or "").strip()
         if not text:
+            self._record_error("服务商没有返回文字，可能是音频为空或语言不匹配。", 200)
             return stt.SpeechResult(None, stt.SpeechResultState.ERROR)
 
+        self._attr_extra_state_attributes = {}
         return stt.SpeechResult(text, stt.SpeechResultState.SUCCESS)

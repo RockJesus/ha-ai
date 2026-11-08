@@ -362,3 +362,28 @@ def device_info(entry: ConfigEntry, config: dict[str, Any] | None = None) -> Dev
         entry_type=DeviceEntryType.SERVICE,
         configuration_url=DOCUMENTATION_URL,
     )
+
+
+def provider_error_hint(status: int, body: str) -> str:
+    """Translate a failed provider response into a short Chinese hint."""
+    lowered = (body or "").lower()
+    if (
+        status == 402
+        or "30001" in (body or "")
+        or "insufficient" in lowered
+        or "balance" in lowered
+        or "欠费" in (body or "")
+    ):
+        return "服务商账户余额或额度不足，请充值后重试，或先换用其他服务商/Key。"
+    if status in (401, 403):
+        return "API Key 无效或没有该模型的权限，请重新认证或更换 Key。"
+    if status == 429:
+        return "请求过于频繁或触发限流，请稍后再试。"
+    if status == 404:
+        return "该服务商没有这个模型或接口不存在，请在下拉里重新选择模型。"
+    if status >= 500:
+        return f"服务商暂时不可用（HTTP {status}），请稍后重试。"
+    snippet = (body or "").strip().replace("\n", " ")[:120]
+    if not snippet:
+        return f"服务商返回错误（HTTP {status}）。"
+    return f"服务商返回错误（HTTP {status}）：{snippet}"

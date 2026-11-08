@@ -551,11 +551,7 @@ def _settings_schema(
                 CONF_LLM_HASS_API, default=current.get(CONF_LLM_HASS_API) or ["assist"]
             ): _llm_api_selector(hass),
             vol.Optional(
-                CONF_PROMPT,
-                description={
-                    "suggested_value": current.get(CONF_PROMPT)
-                    or llm.DEFAULT_INSTRUCTIONS_PROMPT
-                },
+                CONF_PROMPT, default=(current.get(CONF_PROMPT) or "")
             ): selector.TemplateSelector(),
             vol.Optional(
                 CONF_MAX_TOKENS,

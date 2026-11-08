@@ -56,6 +56,11 @@
 
 ## 更新日志
 
+### v1.0.4
+- 修复历史条目把图像模型写进文本模型槽位（如 flux / Kolors / Seedream）时误创建对话代理实体的问题：文本模型与图像模型同名视为未配置。
+- 对话代理未保存过 LLM API 选项时默认使用 `assist`，新装条目开箱即可控制设备；显式清空则不具备控制能力。
+- `ai_task` 实体同步按该规则判定能力位，避免图像模型被当成文本模型。
+
 ### v1.0.3
 - 新增 `conversation` 对话代理：走 OpenAI 兼容的 `chat/completions`，并通过 Home Assistant 的 LLM API 获得设备工具，模型发起 `tool_calls` 后由 HA 执行并继续对话（最多 10 轮）；在选项里勾选 `assist` API 即具备控制设备能力。
 - 新增 `stt` 语音转文字平台：`/audio/transcriptions`，兼容语音卫星下发的 16kHz/16bit/单声道 PCM WAV（自动补 WAV 头）。

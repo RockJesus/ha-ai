@@ -26,6 +26,7 @@ from .const import (
     CONF_API_KEY,
     CONF_BASE_URL,
     CONF_CHAT_MODEL,
+    CONF_IMAGE_MODEL,
     CONF_PROMPT,
     DEFAULT_TIMEOUT,
     DOMAIN,
@@ -48,7 +49,9 @@ async def async_setup_entry(
     """Set up the conversation entity."""
     config = resolve_config(entry)
     chat_model = config.get(CONF_CHAT_MODEL) or ""
-    if not chat_model:
+    if not chat_model or chat_model == (config.get(CONF_IMAGE_MODEL) or ""):
+        # Without a real chat model (an image model id in the chat slot does not
+        # count) there is nothing that can answer.
         return
 
     async_add_entities([HAAIConversationEntity(entry, config)])
@@ -65,7 +68,9 @@ class HAAIConversationEntity(conversation.ConversationEntity):
         self._chat_model: str = config[CONF_CHAT_MODEL]
         self._base_url = normalize_base_url(config.get(CONF_BASE_URL))
         self._api_key: str = config.get(CONF_API_KEY) or ""
-        self._llm_hass_api: list[str] = _as_api_list(config.get(CONF_LLM_HASS_API))
+        self._llm_hass_api: list[str] = _as_api_list(
+            config[CONF_LLM_HASS_API] if CONF_LLM_HASS_API in config else ["assist"]
+        )
         self._prompt: str | None = config.get(CONF_PROMPT) or None
 
         self._attr_name = f"HA AI: {self._chat_model}"

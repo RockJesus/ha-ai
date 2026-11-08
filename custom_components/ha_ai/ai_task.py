@@ -128,6 +128,10 @@ class HAAIEntity(AITaskEntity):
             or data.get(CONF_LEGACY_MODEL)
             or DEFAULTS[self._provider]["image_model"]
         )
+        # Older versions could store the image model in the chat slot; that is
+        # not a usable chat model, treat it as unset.
+        if self._chat_model and self._chat_model == self._image_model:
+            self._chat_model = ""
         base_url = data.get(CONF_BASE_URL) or DEFAULTS[self._provider]["base_url"]
         self._base_url: str = _normalize_base_url(base_url)
         self._size: str = data.get(CONF_SIZE, DEFAULT_SIZE)

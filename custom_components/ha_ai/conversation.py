@@ -31,6 +31,7 @@ from .const import (
     DEFAULT_MAX_TOKENS,
     DEFAULT_TIMEOUT,
     DOMAIN,
+    apply_web_search,
     device_info,
     normalize_base_url,
     provider_error_hint,

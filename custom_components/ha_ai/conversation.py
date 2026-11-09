@@ -198,6 +198,8 @@ class HAAIConversationEntity(conversation.ConversationEntity):
             ]
             payload["tool_choice"] = "auto"
 
+        apply_web_search(payload, self._config, self._base_url)
+
         headers = {"Content-Type": "application/json"}
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"

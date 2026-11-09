@@ -35,6 +35,7 @@ from .const import (
     CONF_STT_MODEL,
     CONF_TTS_MODEL,
     CONF_TTS_VOICE,
+    CONF_WEB_SEARCH,
     DEFAULT_MAX_TOKENS,
     DEFAULT_SIZE,
     DEFAULTS,
@@ -43,6 +44,7 @@ from .const import (
     PROVIDER_LABELS,
     PROVIDER_POLLINATIONS,
     PROVIDERS,
+    WEB_SEARCH_OFF,
     normalize_base_url,
 )
 from .models import (
@@ -150,6 +152,31 @@ def _llm_api_selector(hass: HomeAssistant) -> selector.SelectSelector:
             ],
             multiple=True,
             mode=selector.SelectSelectorMode.LIST,
+        )
+    )
+
+
+_WEB_SEARCH_LABELS = [
+    (WEB_SEARCH_OFF, "关闭"),
+    ("plugin", "插件（已弃用）"),
+    ("auto", "自动"),
+    ("native", "Model native"),
+    ("exa", "Exa"),
+    ("firecrawl", "Firecrawl"),
+    ("parallel", "Parallel"),
+    ("perplexity", "Perplexity"),
+]
+
+
+def _web_search_selector() -> selector.SelectSelector:
+    """OpenRouter web search mode; ignored by other providers at runtime."""
+    return selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            options=[
+                selector.SelectOptionDict(value=value, label=label)
+                for value, label in _WEB_SEARCH_LABELS
+            ],
+            mode=selector.SelectSelectorMode.DROPDOWN,
         )
     )
 
@@ -572,6 +599,10 @@ def _settings_schema(
                 CONF_LLM_HASS_API, default=current.get(CONF_LLM_HASS_API) or ["assist"]
             ): _llm_api_selector(hass),
             vol.Optional(
+                CONF_WEB_SEARCH,
+                default=current.get(CONF_WEB_SEARCH) or WEB_SEARCH_OFF,
+            ): _web_search_selector(),
+            vol.Optional(
                 CONF_PROMPT, default=(current.get(CONF_PROMPT) or "")
             ): selector.TemplateSelector(),
             vol.Optional(
@@ -618,6 +649,9 @@ class HAAIOptionsFlow(OptionsFlow):
             except (TypeError, ValueError):
                 settings[CONF_MAX_TOKENS] = DEFAULT_MAX_TOKENS
             settings[CONF_LLM_HASS_API] = settings.get(CONF_LLM_HASS_API) or []
+            settings[CONF_WEB_SEARCH] = (
+                settings.get(CONF_WEB_SEARCH) or WEB_SEARCH_OFF
+            )
             settings[CONF_PROMPT] = (settings.get(CONF_PROMPT) or "").strip()
             settings[CONF_PROVIDER] = provider
 

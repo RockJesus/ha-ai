@@ -46,11 +46,14 @@ from .const import (
     CONF_LEGACY_MODEL,
     CONF_PROVIDER,
     CONF_SIZE,
+    CONF_WEB_SEARCH,
     DEFAULT_SIZE,
     DEFAULTS,
     PROVIDER_POLLINATIONS,
     PROVIDER_SILICONFLOW,
     PROVIDER_VOLCENGINE,
+    WEB_SEARCH_OFF,
+    apply_web_search,
     device_info,
     provider_error_hint,
 )
@@ -137,6 +140,7 @@ class HAAIEntity(AITaskEntity):
         self._base_url: str = _normalize_base_url(base_url)
         self._size: str = data.get(CONF_SIZE, DEFAULT_SIZE)
         self._width, self._height = _parse_size(self._size)
+        self._web_search: str = data.get(CONF_WEB_SEARCH) or WEB_SEARCH_OFF
 
         features = AITaskEntityFeature(0)
         if self._image_model:
@@ -417,6 +421,10 @@ class HAAIEntity(AITaskEntity):
         }
         if response_format is not None:
             payload["response_format"] = response_format
+
+        apply_web_search(
+            payload, {CONF_WEB_SEARCH: self._web_search}, self._base_url
+        )
 
         session = async_get_clientsession(self.hass)
         status, text = await self._post_chat(session, payload)

@@ -56,6 +56,10 @@
 
 ## 更新日志
 
+### v1.2.3
+- 选项新增「网页搜索」（仅 OpenRouter 生效）：关闭 / 插件（已弃用）/ 自动 / Model native / Exa / Firecrawl / Parallel / Perplexity，默认关闭。启用后按所选引擎在请求里带上 `openrouter:web_search` 服务端工具（插件模式走旧 `web` 插件），对话代理与 AI 任务生成文本都会用上，图片生成不受影响；其他服务商会自动忽略该选项。
+- 搜索会在 OpenRouter 侧产生额外费用，按需开启。
+
 ### v1.2.2
 - 选项表单里的「允许对话代理使用的 Home Assistant API」由原来的下拉 + 添加标签式多选，改为**可勾选的复选框列表**：Device control（设备控制）与 Home Assistant（完全控制）两项直接勾选，手机上更好点。
 - 选项名称同步补上中文说明，默认仍只勾选 `assist`，保存逻辑与实体创建规则不变。

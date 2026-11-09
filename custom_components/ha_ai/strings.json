@@ -74,7 +74,8 @@
           "size": "Image size (for example 1024x1024)",
           "llm_hass_api": "Home Assistant APIs the agent may use (select 'assist' to control devices)",
           "prompt": "System prompt (optional, blank uses the Home Assistant default)",
-          "max_tokens": "Max response tokens (256-8192)"
+          "max_tokens": "Max response tokens (256-8192)",
+          "web_search": "Web search (OpenRouter only)"
         }
       },
       "models": {

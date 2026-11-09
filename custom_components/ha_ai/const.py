@@ -20,6 +20,13 @@ CONF_STT_MODEL = "stt_model"
 CONF_TTS_MODEL = "tts_model"
 CONF_TTS_VOICE = "tts_voice"
 CONF_MAX_TOKENS = "max_tokens"
+CONF_WEB_SEARCH = "web_search"
+
+# OpenRouter web search: "off" leaves requests untouched, "plugin" is the
+# legacy always-on web plugin, everything else is an openrouter:web_search
+# server-tool engine (the model decides when to search).
+WEB_SEARCH_OFF = "off"
+WEB_SEARCH_ENGINES = ("auto", "native", "exa", "firecrawl", "parallel", "perplexity")
 
 # Voice requests synthesize / transcribe short utterances, 120s is generous.
 DEFAULT_TIMEOUT = 120
@@ -334,6 +341,31 @@ def normalize_base_url(value: str | None) -> str:
     if value and not value.startswith(("http://", "https://")):
         value = f"https://{value}"
     return value
+
+
+def apply_web_search(
+    payload: dict[str, Any], config: dict[str, Any], base_url: str | None
+) -> None:
+    """Enable OpenRouter web search on a chat completions payload.
+
+    No-op for every other provider: sending ``plugins`` / ``tools`` entries to
+    gateways that do not understand them would fail the request.
+    """
+    mode = str(config.get(CONF_WEB_SEARCH) or WEB_SEARCH_OFF).strip().lower()
+    if mode in ("", WEB_SEARCH_OFF, "none", "disabled"):
+        return
+    if "openrouter.ai" not in normalize_base_url(base_url).lower():
+        return
+    if mode == "plugin":
+        payload["plugins"] = [{"id": "web"}]
+        return
+    if mode not in WEB_SEARCH_ENGINES:
+        mode = "auto"
+    tools = payload.get("tools")
+    if not isinstance(tools, list):
+        tools = []
+        payload["tools"] = tools
+    tools.append({"type": "openrouter:web_search", "parameters": {"engine": mode}})
 
 
 def resolve_config(entry: ConfigEntry) -> dict[str, Any]:

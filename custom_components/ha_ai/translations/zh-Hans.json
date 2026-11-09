@@ -74,7 +74,8 @@
           "size": "图像尺寸（例如 1024x1024）",
           "llm_hass_api": "允许对话代理使用的 Home Assistant API（勾选“assist”即可控制设备）",
           "prompt": "系统提示词（选填，留空使用 Home Assistant 默认提示词）",
-          "max_tokens": "回复最大 Token（256-8192）"
+          "max_tokens": "回复最大 Token（256-8192）",
+          "web_search": "网页搜索（仅 OpenRouter 生效）"
         }
       },
       "models": {

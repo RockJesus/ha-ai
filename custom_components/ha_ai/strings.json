@@ -58,7 +58,9 @@
       "unknown": "Unexpected error while loading the model list."
     },
     "abort": {
-      "already_configured": "This provider, endpoint and model combination is already configured."
+      "already_configured": "This provider, endpoint and model combination is already configured.",
+      "reauth_successful": "Authentication was successful",
+      "reconfigure_successful": "Reconfiguration was successful"
     }
   },
   "options": {

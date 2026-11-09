@@ -58,7 +58,9 @@
       "unknown": "读取模型列表时发生未知错误。"
     },
     "abort": {
-      "already_configured": "该服务商、地址与模型组合已经配置过。"
+      "already_configured": "该服务商、地址与模型组合已经配置过。",
+      "reauth_successful": "认证成功",
+      "reconfigure_successful": "重新配置成功"
     }
   },
   "options": {

@@ -123,8 +123,19 @@ def _default_label(provider: str, key: str, empty_label: str) -> str:
     return f"使用默认 · {value}"
 
 
+# Friendlier labels for the built-in APIs; unknown ids fall back to their name.
+_LLM_API_LABELS = {
+    "assist": "Device control（设备控制，安全）",
+    "homeassistant": "Home Assistant（完全控制，管理员级）",
+}
+
+
 def _llm_api_selector(hass: HomeAssistant) -> selector.SelectSelector:
-    """Return a multi-select of the Home Assistant LLM APIs."""
+    """Return a checkbox list of the Home Assistant LLM APIs.
+
+    Multiple + LIST renders as checkboxes in the frontend, which reads much
+    better on mobile than the chip-style dropdown it replaced.
+    """
     try:
         apis = llm.async_get_apis(hass)
     except Exception:  # noqa: BLE001 - discovery must never break the form
@@ -132,10 +143,13 @@ def _llm_api_selector(hass: HomeAssistant) -> selector.SelectSelector:
     return selector.SelectSelector(
         selector.SelectSelectorConfig(
             options=[
-                selector.SelectOptionDict(value=api.id, label=api.name) for api in apis
+                selector.SelectOptionDict(
+                    value=api.id, label=_LLM_API_LABELS.get(api.id, api.name)
+                )
+                for api in apis
             ],
             multiple=True,
-            mode=selector.SelectSelectorMode.DROPDOWN,
+            mode=selector.SelectSelectorMode.LIST,
         )
     )
 
@@ -402,9 +416,12 @@ class HAAIConfigFlow(ConfigFlow, domain=DOMAIN):
             elif catalog.error == "cannot_connect":
                 errors["base"] = "cannot_connect"
             else:
-                return self.async_update_reload_and_abort(
-                    entry, data_updates={CONF_API_KEY: api_key}
+                # The entry has an update listener, so let it reload instead of
+                # reload-and-abort (report_usage on 2026.11, breaks 2026.12.0).
+                self.hass.config_entries.async_update_entry(
+                    entry, data={**entry.data, CONF_API_KEY: api_key}
                 )
+                return self.async_abort(reason="reauth_successful")
 
         return self.async_show_form(
             step_id="reauth_confirm",
@@ -452,14 +469,16 @@ class HAAIConfigFlow(ConfigFlow, domain=DOMAIN):
                 elif catalog.error == "cannot_connect":
                     errors["base"] = "cannot_connect"
                 else:
-                    return self.async_update_reload_and_abort(
+                    self.hass.config_entries.async_update_entry(
                         entry,
-                        data_updates={
+                        data={
+                            **entry.data,
                             CONF_PROVIDER: provider,
                             CONF_API_KEY: api_key,
                             CONF_BASE_URL: base_url,
                         },
                     )
+                    return self.async_abort(reason="reconfigure_successful")
 
         return self.async_show_form(
             step_id="reconfigure",

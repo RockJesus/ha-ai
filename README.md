@@ -56,6 +56,11 @@
 
 ## 更新日志
 
+### v1.2.2
+- 选项表单里的「允许对话代理使用的 Home Assistant API」由原来的下拉 + 添加标签式多选，改为**可勾选的复选框列表**：Device control（设备控制）与 Home Assistant（完全控制）两项直接勾选，手机上更好点。
+- 选项名称同步补上中文说明，默认仍只勾选 `assist`，保存逻辑与实体创建规则不变。
+- 重新认证 / 重新配置的收尾改用 `async_update_entry` + `async_abort`（原先的 `async_update_reload_and_abort` 从 HA 2026.11 起会记录使用告警），由已有 update listener 负责重载。
+
 ### v1.2.1
 - 中文错误提示扩展到 AI 任务（ai_task：生成文本/图片）与对话代理（conversation）：余额不足、Key 无效、限流、模型不存在、服务商不可用、连接失败、超时都返回中文原因，不再是英文原始报错。
 

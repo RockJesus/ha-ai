@@ -16,5 +16,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/RockJesus/ha-ai/issues",
   "requirements": [],
-  "version": "1.2.4"
+  "version": "1.2.5"
 }

@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="custom_components/ha_ai/brand/dark_logo.png">
-    <img src="custom_components/ha_ai/brand/logo.png" width="150" alt="HA AI">
-  </picture>
+  <img src="custom_components/ha_ai/brand/logo.png" width="150" alt="HA AI">
 </p>
 
 <h1 align="center">HA AI</h1>

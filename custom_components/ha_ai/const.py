@@ -372,6 +372,8 @@ def resolve_config(entry: ConfigEntry) -> dict[str, Any]:
     """Merge data and options, falling back to the provider defaults."""
     config: dict[str, Any] = {**entry.data, **entry.options}
     defaults = DEFAULTS.get(config.get(CONF_PROVIDER, ""), {})
+    if not (config.get(CONF_BASE_URL) or "").strip():
+        config[CONF_BASE_URL] = defaults.get("base_url", "")
     for key in VOICE_KEYS:
         if not (config.get(key) or "").strip():
             config[key] = defaults.get(key, "")

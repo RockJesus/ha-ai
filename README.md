@@ -44,9 +44,8 @@ HA AI 是一个「能力提供者」型集成，不绑定单一厂商。填入�
 
 **通过 HACS（推荐）**
 
-1. HACS → 集成 → 右上角菜单 → 自定义仓库
-2. 添加 `https://github.com/RockJesus/ha-ai`，类别选「集成」
-3. 搜索 **HA AI** 安装，重启 Home Assistant
+1. HACS → 集成 → 搜索 **HA AI** 并安装，重启 Home Assistant
+2. 如果暂时搜不到（默认仓库收录后即可直接搜索），再用自定义仓库：HACS → 集成 → 右上角菜单 → 自定义仓库，添加 `https://github.com/RockJesus/ha-ai`，类别选「集成」，然后重新搜索安装
 
 **手动安装**
 
